@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1086743880920",
+    "project_id": "studyvillage",
+    "storage_bucket": "studyvillage.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1086743880920:android:55968a6c2df22746d6a3ad",
+        "android_client_info": {
+          "package_name": "com.example.studyvillage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAz6Suy6gPXCuY6KqPAIIAXlgCMI4OLl-E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

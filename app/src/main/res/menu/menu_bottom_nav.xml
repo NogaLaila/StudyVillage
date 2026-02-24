@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/focusFragment"
+        android:icon="@drawable/ic_focus"
+        android:title="Focus" />
+
+    <item
+        android:id="@+id/socialFragment"
+        android:icon="@drawable/ic_social"
+        android:title="Social" />
+
+    <item
+        android:id="@+id/shopFragment"
+        android:icon="@drawable/ic_shop"
+        android:title="Shop" />
+
+    <item
+        android:id="@+id/myVillageFragment"
+        android:icon="@drawable/ic_village"
+        android:title="Village" />
+
+</menu>

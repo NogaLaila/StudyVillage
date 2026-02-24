@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="190dp"
+    android:padding="12dp">
+
+    <ImageView
+        android:id="@+id/imgItem"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        android:scaleType="fitCenter"
+        android:importantForAccessibility="no"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnBuy"
+        android:layout_width="0dp"
+        android:layout_height="25dp"
+        android:text="Buy"
+        android:textAllCaps="false"
+        android:textSize="11sp"
+        android:textColor="@android:color/white"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+
+        app:cornerRadius="16dp"
+        app:backgroundTint="#7CB342"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
+        android:id="@+id/txtPrice"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="#6B4F2C"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        app:layout_constraintBottom_toTopOf="@id/btnBuy"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
+        android:id="@+id/txtItemName"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="6dp"
+        android:textStyle="bold"
+        android:textColor="#6B4F2C"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:maxLines="2"
+        android:ellipsize="end"
+
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="9sp"
+        android:autoSizeMaxTextSize="14sp"
+        android:autoSizeStepGranularity="1sp"
+
+        app:layout_constraintTop_toBottomOf="@id/imgItem"
+        app:layout_constraintBottom_toTopOf="@id/txtPrice"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>
