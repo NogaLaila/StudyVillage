@@ -2,17 +2,69 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/myVillageFragment">
+    app:startDestination="@id/splashFragment">
 
     <fragment
-        android:id="@+id/myVillageFragment"
-        android:name="com.example.studyvillage.ui.village.MyVillageFragment"
-        android:label="Village" />
+        android:id="@+id/splashFragment"
+        android:name="com.example.studyvillage.ui.auth.SplashFragment"
+        android:label="Splash">
+        <action
+            android:id="@+id/action_splashFragment_to_welcomeFragment"
+            app:destination="@id/welcomeFragment" />
+        <action
+            android:id="@+id/action_splashFragment_to_focusFragment"
+            app:destination="@id/focusFragment" />
+    </fragment>
 
-<!--    <fragment-->
-<!--        android:id="@+id/focusFragment"-->
-<!--        android:name="com.example.studyvillage.ui.focus.FocusFragment"-->
-<!--        android:label="Focus" />-->
+    <fragment
+        android:id="@+id/welcomeFragment"
+        android:name="com.example.studyvillage.ui.auth.WelcomeFragment"
+        android:label="Welcome">
+        <action
+            android:id="@+id/action_welcomeFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_welcomeFragment_to_registerFragment"
+            app:destination="@id/registerFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.studyvillage.ui.auth.LoginFragment"
+        android:label="Login">
+        <action
+            android:id="@+id/action_loginFragment_to_registerFragment"
+            app:destination="@id/registerFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_focusFragment"
+            app:destination="@id/focusFragment"
+            app:popUpTo="@id/welcomeFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.example.studyvillage.ui.auth.RegisterFragment"
+        android:label="Register">
+        <action
+            android:id="@+id/action_registerFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_registerFragment_to_focusFragment"
+            app:destination="@id/focusFragment"
+            app:popUpTo="@id/welcomeFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/focusFragment"
+        android:name="com.example.studyvillage.ui.village.MyVillageFragment"
+        android:label="Focus" />
+
+    <fragment
+        android:id="@+id/shopFragment"
+        android:name="com.studyvillage.app.ui.shop.ShopFragment"
+        android:label="Shop" />
 
     <fragment
         android:id="@+id/socialFragment"
@@ -20,8 +72,7 @@
         android:label="Social" />
 
     <fragment
-        android:id="@+id/shopFragment"
-        android:name="com.studyvillage.app.ui.shop.ShopFragment"
-        android:label="Shop" />
-
+        android:id="@+id/myVillageFragment"
+        android:name="com.example.studyvillage.ui.village.MyVillageFragment"
+        android:label="My Village" />
 </navigation>

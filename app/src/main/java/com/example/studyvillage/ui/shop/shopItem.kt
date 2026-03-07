@@ -1,9 +1,9 @@
 package com.studyvillage.app.ui.shop
 
-import androidx.annotation.DrawableRes
-
 data class ShopItem(
+    val id: String,
     val name: String,
-    @DrawableRes val imageRes: Int,
-    val price: String
+    val imageRes: Int,
+    val price: Long,
+    val canBuy: Boolean
 )

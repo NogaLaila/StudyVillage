@@ -2,4 +2,7 @@
 <resources>
     <color name="beige_title">#F8E2D2</color>
     <color name="nav_bg">#F8E2D2</color>
+    <color name="auth_background">#FDF2E7</color>
+    <color name="auth_button">#F9E0BF</color>
+    <color name="auth_text">#634A34</color>
 </resources>

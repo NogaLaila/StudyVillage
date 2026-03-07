@@ -13,10 +13,8 @@ class ShopRepository(
     suspend fun getShopItems(category: String, forceRefresh: Boolean = true): List<ShopItemEntity> {
         val cached = dao.getItemsByCategory(category)
 
-        // show cache if exists AND we don't want refresh
         if (cached.isNotEmpty() && !forceRefresh) return cached
 
-        // fetch latest from Firestore
         val snap = firestore.collection("shop_items")
             .whereEqualTo("category", category)
             .get()
@@ -32,11 +30,9 @@ class ShopRepository(
             )
         }
 
-        // Replace category data in Room
         dao.clearCategory(category)
         dao.insertAll(remoteItems)
 
-        // return the new data (or re-read from Room)
         return remoteItems
     }
 }

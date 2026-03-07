@@ -17,4 +17,7 @@ interface ShopDao {
 
     @Query("DELETE FROM shop_items WHERE category = :category")
     suspend fun clearCategory(category: String): Int
+
+    @Query("SELECT * FROM shop_items WHERE id = :id LIMIT 1")
+    suspend fun getItemById(id: String): ShopItemEntity?
 }

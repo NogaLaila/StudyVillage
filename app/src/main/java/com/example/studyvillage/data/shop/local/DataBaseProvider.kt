@@ -1,17 +1,22 @@
-package com.example.studyvillage.data.local
+package com.example.studyvillage.data.shop.local
 
 import android.content.Context
 import androidx.room.Room
 
-object DatabaseProvider {
-    @Volatile private var INSTANCE: AppDatabase? = null
+object DataBaseProvider {
 
-    fun get(context: Context): AppDatabase =
-        INSTANCE ?: synchronized(this) {
+    @Volatile private var INSTANCE: AppDataBase? = null
+
+    fun get(context: Context): AppDataBase {
+        return INSTANCE ?: synchronized(this) {
             INSTANCE ?: Room.databaseBuilder(
                 context.applicationContext,
-                AppDatabase::class.java,
-                "studyvillage.db"
-            ).build().also { INSTANCE = it }
+                AppDataBase::class.java,
+                "study_village.db"
+            )
+                .fallbackToDestructiveMigration()
+                .build()
+                .also { INSTANCE = it }
         }
+    }
 }

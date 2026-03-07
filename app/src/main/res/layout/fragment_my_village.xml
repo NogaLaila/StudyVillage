@@ -41,6 +41,29 @@
         app:layout_constraintHeight_percent="0.90"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <!-- ✅ Tap catcher FIRST (below placedLayer) -->
+    <View
+        android:id="@+id/islandTapLayer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@android:color/transparent"
+        app:layout_constraintTop_toTopOf="@id/imgIsland"
+        app:layout_constraintBottom_toBottomOf="@id/imgIsland"
+        app:layout_constraintStart_toStartOf="@id/imgIsland"
+        app:layout_constraintEnd_toEndOf="@id/imgIsland"/>
+
+    <!-- ✅ Placed items SECOND (on top, clickable) -->
+    <FrameLayout
+        android:id="@+id/placedLayer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toTopOf="@id/imgIsland"
+        app:layout_constraintBottom_toBottomOf="@id/imgIsland"
+        app:layout_constraintStart_toStartOf="@id/imgIsland"
+        app:layout_constraintEnd_toEndOf="@id/imgIsland"/>
+
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/topBar"
         android:layout_width="0dp"
@@ -98,7 +121,7 @@
                     android:id="@+id/txtCoins"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1"
+                    android:text="0"
                     android:textStyle="bold"
                     android:textSize="16sp"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -122,5 +145,27 @@
 
     </com.google.android.material.card.MaterialCardView>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnPlace"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:text="Inventory"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:layout_margin="16dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="16dp"
+
+        app:icon="@android:drawable/ic_menu_agenda"
+        app:iconPadding="8dp"
+        app:iconTint="#000000"
+        app:iconSize="22dp"
+
+        app:backgroundTint="#FFE8A8"
+        app:cornerRadius="20dp"
+        app:elevation="3dp"
+
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

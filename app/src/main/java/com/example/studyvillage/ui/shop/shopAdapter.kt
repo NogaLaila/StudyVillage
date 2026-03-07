@@ -6,7 +6,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.studyvillage.databinding.ItemShopGridBinding
 
 class ShopAdapter(
-    items: List<ShopItem>
+    items: List<ShopItem>,
+    private val onBuyClick: (ShopItem) -> Unit
 ) : RecyclerView.Adapter<ShopAdapter.VH>() {
 
     private val data = items.toMutableList()
@@ -23,7 +24,7 @@ class ShopAdapter(
             parent,
             false
         )
-        return VH(binding)
+        return VH(binding, onBuyClick)
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
@@ -32,11 +33,22 @@ class ShopAdapter(
 
     override fun getItemCount(): Int = data.size
 
-    class VH(private val binding: ItemShopGridBinding) : RecyclerView.ViewHolder(binding.root) {
+    class VH(
+        private val binding: ItemShopGridBinding,
+        private val onBuyClick: (ShopItem) -> Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
+
         fun bind(item: ShopItem) {
             binding.imgItem.setImageResource(item.imageRes)
             binding.txtItemName.text = item.name
-            binding.txtPrice.text = item.price + " coins"
+            binding.txtPrice.text = "${item.price} coins"
+
+            binding.btnBuy.isEnabled = item.canBuy
+            binding.btnBuy.alpha = if (item.canBuy) 1f else 0.5f
+
+            binding.btnBuy.setOnClickListener {
+                onBuyClick(item)
+            }
         }
     }
 }

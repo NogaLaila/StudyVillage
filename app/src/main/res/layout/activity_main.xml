@@ -9,18 +9,38 @@
         android:id="@+id/nav_host_fragment"
         android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
-        android:layout_height="878dp"
+        android:layout_height="match_parent"
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_graph" />
+
+    <ImageButton
+        android:id="@+id/btnLogout"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|start"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+
+        android:background="@android:color/transparent"
+        android:contentDescription="Logout"
+        android:src="@android:drawable/ic_lock_power_off" />
 
     <FrameLayout
         android:id="@+id/frameLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:paddingBottom="8dp">
+        android:paddingBottom="8dp" />
 
-    </FrameLayout>
+    <ImageView
+        android:id="@+id/bottom_nav_bg"
+        android:layout_width="405dp"
+        android:layout_height="127dp"
+        android:layout_marginEnd="16dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/navbar_bg"
+        app:layout_anchor="@id/frameLayout"
+        app:layout_anchorGravity="bottom|center" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_nav"
@@ -30,25 +50,13 @@
         app:itemHorizontalPadding="80dp"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconSize="65dp"
+        app:itemIconTint="@null"
         app:itemTextAppearanceActive="@style/BottomNavText"
         app:itemTextAppearanceInactive="@style/BottomNavText"
-        app:itemIconTint="@null"
         app:itemTextColor="@null"
         app:labelVisibilityMode="labeled"
-        app:layout_anchor="@+id/frameLayout"
+        app:layout_anchor="@id/frameLayout"
         app:layout_anchorGravity="top|center"
-        app:menu="@menu/menu_bottom_nav">
-
-    </com.google.android.material.bottomnavigation.BottomNavigationView>
-
-    <ImageView
-        android:layout_width="405dp"
-        android:layout_height="127dp"
-        android:layout_marginEnd="16dp"
-        android:scaleType="fitXY"
-        android:src="@drawable/navbar_bg"
-        app:layout_anchor="@+id/frameLayout"
-        app:layout_anchorGravity="bottom|center" />
-
+        app:menu="@menu/menu_bottom_nav" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
