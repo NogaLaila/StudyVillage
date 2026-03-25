@@ -58,7 +58,7 @@
 
     <fragment
         android:id="@+id/focusFragment"
-        android:name="com.example.studyvillage.ui.village.MyVillageFragment"
+        android:name="com.example.studyvillage.ui.focus.FocusFragment"
         android:label="Focus" />
 
     <fragment
