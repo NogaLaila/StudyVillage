@@ -2,10 +2,12 @@ package com.example.studyvillage.ui.focus
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.studyvillage.R
 import com.example.studyvillage.databinding.FragmentFocusBinding
+import java.util.Locale
 
 class FocusFragment : Fragment(R.layout.fragment_focus) {
 
@@ -26,15 +28,31 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
 			viewModel.onPauseClicked()
 		}
 
-		binding.btnSkip.setOnClickListener {
-			viewModel.onSkipClicked()
+		binding.btnReset.setOnClickListener {
+			viewModel.onResetClicked()
+		}
+
+		binding.btnSetInterval.setOnClickListener {
+			val minutesText = binding.etIntervalMinutes.text?.toString().orEmpty().trim()
+			val minutes = minutesText.toIntOrNull()
+			if (minutes == null || minutes !in 1..180) {
+				Toast.makeText(requireContext(), R.string.focus_invalid_interval, Toast.LENGTH_SHORT).show()
+				return@setOnClickListener
+			}
+			viewModel.onSetIntervalMinutes(minutes)
 		}
 
 		viewModel.uiState.observe(viewLifecycleOwner) { state ->
 			binding.tvTimeRemaining.text = formatMillis(state.remainingMillis)
 			binding.btnStart.isEnabled = !state.isRunning
 			binding.btnPause.isEnabled = state.isRunning
-			binding.btnSkip.isEnabled = state.remainingMillis > 0L
+			if (!binding.etIntervalMinutes.hasFocus()) {
+				val currentText = binding.etIntervalMinutes.text?.toString().orEmpty()
+				val stateText = state.intervalMinutes.toString()
+				if (currentText != stateText) {
+					binding.etIntervalMinutes.setText(stateText)
+				}
+			}
 		}
 	}
 
@@ -45,9 +63,9 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
 		val seconds = totalSeconds % 60
 
 		return if (hours > 0) {
-			String.format("%d:%02d:%02d", hours, minutes, seconds)
+			String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
 		} else {
-			String.format("%02d:%02d", minutes, seconds)
+			String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
 		}
 	}
 

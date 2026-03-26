@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 data class FocusTimerUiState(
+    val intervalMinutes: Int,
     val totalMillis: Long,
     val remainingMillis: Long,
     val isRunning: Boolean
@@ -19,6 +20,7 @@ class FocusViewModel : ViewModel() {
 
     private val _uiState = MutableLiveData(
         FocusTimerUiState(
+            intervalMinutes = DEFAULT_MINUTES,
             totalMillis = totalMillis,
             remainingMillis = remainingMillis,
             isRunning = false
@@ -38,9 +40,17 @@ class FocusViewModel : ViewModel() {
         pauseTimer()
     }
 
-    fun onSkipClicked() {
+    fun onSetIntervalMinutes(minutes: Int) {
+        if (minutes !in MIN_MINUTES..MAX_MINUTES) return
         stopTimerInternal()
-        remainingMillis = 0L
+        totalMillis = minutesToMillis(minutes)
+        remainingMillis = totalMillis
+        publishState(isRunning = false)
+    }
+
+    fun onResetClicked() {
+        stopTimerInternal()
+        remainingMillis = totalMillis
         publishState(isRunning = false)
     }
 
@@ -77,7 +87,9 @@ class FocusViewModel : ViewModel() {
     }
 
     private fun publishState(isRunning: Boolean) {
+        val intervalMinutes = (totalMillis / 60_000L).toInt()
         _uiState.value = FocusTimerUiState(
+            intervalMinutes = intervalMinutes,
             totalMillis = totalMillis,
             remainingMillis = remainingMillis,
             isRunning = isRunning
@@ -91,6 +103,8 @@ class FocusViewModel : ViewModel() {
 
     private companion object {
         const val DEFAULT_MINUTES = 25
+        const val MIN_MINUTES = 1
+        const val MAX_MINUTES = 180
         const val TICK_MS = 1000L
 
         fun minutesToMillis(minutes: Int): Long = minutes * 60_000L

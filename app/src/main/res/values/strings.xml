@@ -3,6 +3,8 @@
     <string name="focus_title">Focus</string>
     <string name="focus_start">Start</string>
     <string name="focus_pause">Pause</string>
-    <string name="focus_skip">Skip</string>
+    <string name="focus_set_time">Set Time</string>
+    <string name="focus_reset">Reset</string>
+    <string name="focus_invalid_interval">Enter minutes between 1 and 180</string>
     <string name="focus_coins">Coins</string>
 </resources>
