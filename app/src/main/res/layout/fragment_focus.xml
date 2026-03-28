@@ -85,20 +85,16 @@
             android:orientation="horizontal"
             android:weightSum="3">
 
-            <EditText
-                android:id="@+id/etIntervalMinutes"
+            <TextView
+                android:id="@+id/tvIntervalValue"
                 android:layout_width="0dp"
                 android:layout_height="54dp"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="2"
                 android:background="@drawable/bg_focus_timer_pill"
                 android:gravity="center"
-                android:hint="25"
-                android:imeOptions="actionDone"
-                android:inputType="number"
-                android:maxLength="3"
+                android:text="25"
                 android:textColor="#3E2E2A"
-                android:textColorHint="#8B7B75"
                 android:textSize="24sp"
                 tools:text="25" />
 

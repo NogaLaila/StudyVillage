@@ -3,7 +3,7 @@ package com.example.studyvillage.ui.focus
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.Toast
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -24,6 +24,7 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
 
     private lateinit var viewModel: FocusViewModel
     private var rewardDialog: AlertDialog? = null
+    private var intervalDialog: AlertDialog? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -51,18 +52,14 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
         }
 
         binding.btnSetInterval.setOnClickListener {
-            val minutesText = binding.etIntervalMinutes.text?.toString().orEmpty().trim()
-            val minutes = minutesText.toIntOrNull()
-            if (minutes == null || minutes !in 1..180) {
-                Toast.makeText(requireContext(), R.string.focus_invalid_interval, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            viewModel.onSetIntervalMinutes(minutes)
+            val selectedMinutes = viewModel.uiState.value?.intervalMinutes ?: DEFAULT_INTERVAL_MINUTES
+            showIntervalPickerDialog(selectedMinutes)
         }
 
         viewModel.uiState.observe(viewLifecycleOwner) { state ->
             binding.tvTimeRemaining.text = formatMillis(state.remainingMillis)
             binding.tvCoins.text = state.coins.toString()
+            binding.tvIntervalValue.text = state.intervalMinutes.toString()
             binding.btnStart.isEnabled = !state.isRunning
             binding.btnPause.isEnabled = state.isRunning
 
@@ -70,14 +67,53 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
                 showRewardDialog(earned)
             }
 
-            if (!binding.etIntervalMinutes.hasFocus()) {
-                val currentText = binding.etIntervalMinutes.text?.toString().orEmpty()
-                val stateText = state.intervalMinutes.toString()
-                if (currentText != stateText) {
-                    binding.etIntervalMinutes.setText(stateText)
-                }
-            }
         }
+    }
+
+    private fun showIntervalPickerDialog(initialMinutes: Int) {
+        if (!isAdded) return
+        if (intervalDialog?.isShowing == true) return
+
+        var selectedMinutes = initialMinutes.coerceIn(MIN_INTERVAL_MINUTES, MAX_INTERVAL_MINUTES)
+
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_focus_picker, null)
+
+        val minutesInsideClock = dialogView.findViewById<TextView>(R.id.tvPickerMinutes)
+        val caption = dialogView.findViewById<TextView>(R.id.tvPickerCaption)
+        val seekBar = dialogView.findViewById<SeekBar>(R.id.seekInterval)
+
+        fun render(minutes: Int) {
+            minutesInsideClock.text = minutes.toString()
+            caption.text = getString(R.string.focus_picker_caption, minutes)
+        }
+
+        seekBar.min = MIN_INTERVAL_MINUTES
+        seekBar.max = MAX_INTERVAL_MINUTES
+        seekBar.progress = selectedMinutes
+        render(selectedMinutes)
+
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                selectedMinutes = progress.coerceIn(MIN_INTERVAL_MINUTES, MAX_INTERVAL_MINUTES)
+                render(selectedMinutes)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
+        intervalDialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogView)
+            .setPositiveButton(R.string.focus_picker_apply) { _, _ ->
+                viewModel.onSetIntervalMinutes(selectedMinutes)
+            }
+            .setNegativeButton(R.string.focus_picker_cancel, null)
+            .setOnDismissListener {
+                intervalDialog = null
+            }
+            .show()
     }
 
     private fun formatMillis(millis: Long): String {
@@ -114,9 +150,17 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
     }
 
     override fun onDestroyView() {
+        intervalDialog?.dismiss()
+        intervalDialog = null
         rewardDialog?.dismiss()
         rewardDialog = null
         super.onDestroyView()
         _binding = null
+    }
+
+    private companion object {
+        const val DEFAULT_INTERVAL_MINUTES = 25
+        const val MIN_INTERVAL_MINUTES = 1
+        const val MAX_INTERVAL_MINUTES = 180
     }
 }

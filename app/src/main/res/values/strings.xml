@@ -11,4 +11,8 @@
     <string name="focus_reward_title">כל הכבוד!</string>
     <string name="focus_reward_subtitle">הרווחת</string>
     <string name="focus_reward_close">להמשיך</string>
+    <string name="focus_picker_title">Set focus time</string>
+    <string name="focus_picker_caption">%1$d minutes</string>
+    <string name="focus_picker_apply">Apply</string>
+    <string name="focus_picker_cancel">Cancel</string>
 </resources>
