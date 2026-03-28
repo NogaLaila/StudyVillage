@@ -7,6 +7,10 @@
     <string name="focus_reset">Reset</string>
     <string name="focus_invalid_interval">Enter minutes between 1 and 180</string>
     <string name="focus_coins">Coins</string>
+    <string name="focus_default_time">25:00</string>
+    <string name="focus_default_interval">25</string>
+    <string name="focus_default_coins">45</string>
+    <string name="focus_default_lives">2</string>
     <string name="focus_reward_toast">Great job! +%1$d coins</string>
     <string name="focus_reward_title">Great Job!</string>
     <string name="focus_reward_subtitle">You earned</string>

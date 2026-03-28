@@ -41,6 +41,9 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
         )
         viewModel = ViewModelProvider(this, factory)[FocusViewModel::class.java]
 
+        binding.txtTitle.text = getString(R.string.focus_title)
+        binding.txtCoins.text = "0"
+
         binding.btnStart.setOnClickListener {
             viewModel.onStartClicked()
         }
@@ -61,6 +64,7 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
         viewModel.uiState.observe(viewLifecycleOwner) { state ->
             binding.tvTimeRemaining.text = formatMillis(state.remainingMillis)
             binding.tvCoins.text = state.coins.toString()
+            binding.txtCoins.text = state.coins.toString()
             binding.tvIntervalValue.text = state.intervalMinutes.toString()
             binding.btnStart.isEnabled = !state.isRunning
             binding.btnPause.isEnabled = state.isRunning
