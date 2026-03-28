@@ -5,6 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.SeekBar
 import android.widget.TextView
+import android.graphics.drawable.ColorDrawable
+import android.graphics.Color
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -136,17 +138,20 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
         val dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_focus_completion, null)
         dialogView.findViewById<TextView>(R.id.tvRewardCoins).text = earned.toString()
+        dialogView.findViewById<View>(R.id.btnRewardClose).setOnClickListener {
+            rewardDialog?.dismiss()
+        }
 
         rewardDialog = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogView)
             .setCancelable(false)
-            .setPositiveButton(R.string.focus_reward_close) { _, _
-                -> viewModel.onRewardMessageShown() }
             .setOnDismissListener {
                 viewModel.onRewardMessageShown()
                 rewardDialog = null
             }
             .show()
+
+        rewardDialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
     }
 
     override fun onDestroyView() {

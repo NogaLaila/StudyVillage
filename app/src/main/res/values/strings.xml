@@ -8,9 +8,9 @@
     <string name="focus_invalid_interval">Enter minutes between 1 and 180</string>
     <string name="focus_coins">Coins</string>
     <string name="focus_reward_toast">Great job! +%1$d coins</string>
-    <string name="focus_reward_title">כל הכבוד!</string>
-    <string name="focus_reward_subtitle">הרווחת</string>
-    <string name="focus_reward_close">להמשיך</string>
+    <string name="focus_reward_title">Great Job!</string>
+    <string name="focus_reward_subtitle">You earned</string>
+    <string name="focus_reward_close">Continue</string>
     <string name="focus_picker_title">Set focus time</string>
     <string name="focus_picker_caption">%1$d minutes</string>
     <string name="focus_picker_apply">Apply</string>
