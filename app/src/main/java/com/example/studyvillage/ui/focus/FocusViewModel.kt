@@ -4,29 +4,45 @@ import android.os.CountDownTimer
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.studyvillage.data.user.UserRepository
+import kotlinx.coroutines.launch
 
 data class FocusTimerUiState(
     val intervalMinutes: Int,
     val totalMillis: Long,
     val remainingMillis: Long,
-    val isRunning: Boolean
+    val isRunning: Boolean,
+    val coins: Long,
+    val completedRewardCoins: Int?
 )
 
-class FocusViewModel : ViewModel() {
+class FocusViewModel(
+    private val userRepo: UserRepository,
+    private val uid: String?,
+    private val email: String?
+) : ViewModel() {
 
     private var totalMillis: Long = minutesToMillis(DEFAULT_MINUTES)
     private var remainingMillis: Long = totalMillis
     private var countDownTimer: CountDownTimer? = null
+    private var coins: Long = 0L
 
     private val _uiState = MutableLiveData(
         FocusTimerUiState(
             intervalMinutes = DEFAULT_MINUTES,
             totalMillis = totalMillis,
             remainingMillis = remainingMillis,
-            isRunning = false
+            isRunning = false,
+            coins = coins,
+            completedRewardCoins = null
         )
     )
     val uiState: LiveData<FocusTimerUiState> = _uiState
+
+    init {
+        loadCoins()
+    }
 
     fun onStartClicked() {
         val current = _uiState.value ?: return
@@ -54,6 +70,12 @@ class FocusViewModel : ViewModel() {
         publishState(isRunning = false)
     }
 
+    fun onRewardMessageShown() {
+        val current = _uiState.value ?: return
+        if (current.completedRewardCoins == null) return
+        _uiState.value = current.copy(completedRewardCoins = null)
+    }
+
     private fun startTimer() {
         if (remainingMillis <= 0L) {
             remainingMillis = totalMillis
@@ -69,11 +91,42 @@ class FocusViewModel : ViewModel() {
 
             override fun onFinish() {
                 remainingMillis = 0L
+                stopTimerInternal()
                 publishState(isRunning = false)
+                rewardCompletedSession()
             }
         }.start()
 
         publishState(isRunning = true)
+    }
+
+    private fun rewardCompletedSession() {
+        val currentUid = uid ?: return
+        val rewardCoins = (totalMillis / 60_000L).toInt()
+        if (rewardCoins <= 0) return
+
+        viewModelScope.launch {
+            coins = runCatching {
+                userRepo.addCoins(currentUid, rewardCoins.toLong())
+            }.getOrElse { coins }
+
+            publishState(
+                isRunning = false,
+                completedRewardCoins = rewardCoins
+            )
+        }
+    }
+
+    private fun loadCoins() {
+        val currentUid = uid ?: return
+        viewModelScope.launch {
+            if (email != null) {
+                runCatching { userRepo.syncUser(currentUid, email) }
+            }
+
+            coins = userRepo.getLocalUser(currentUid)?.coins ?: 0L
+            publishState(isRunning = _uiState.value?.isRunning ?: false)
+        }
     }
 
     private fun pauseTimer() {
@@ -86,13 +139,18 @@ class FocusViewModel : ViewModel() {
         countDownTimer = null
     }
 
-    private fun publishState(isRunning: Boolean) {
+    private fun publishState(
+        isRunning: Boolean,
+        completedRewardCoins: Int? = null
+    ) {
         val intervalMinutes = (totalMillis / 60_000L).toInt()
         _uiState.value = FocusTimerUiState(
             intervalMinutes = intervalMinutes,
             totalMillis = totalMillis,
             remainingMillis = remainingMillis,
-            isRunning = isRunning
+            isRunning = isRunning,
+            coins = coins,
+            completedRewardCoins = completedRewardCoins
         )
     }
 
