@@ -1,8 +1,11 @@
 package com.example.studyvillage.ui.focus
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.studyvillage.R
@@ -11,6 +14,7 @@ import com.example.studyvillage.data.user.UserRepository
 import com.example.studyvillage.data.user.remote.UserRemote
 import com.example.studyvillage.databinding.FragmentFocusBinding
 import com.example.studyvillage.util.UserSession
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.util.Locale
 
 class FocusFragment : Fragment(R.layout.fragment_focus) {
@@ -19,6 +23,7 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
     private val binding get() = _binding!!
 
     private lateinit var viewModel: FocusViewModel
+    private var rewardDialog: AlertDialog? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -62,12 +67,7 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
             binding.btnPause.isEnabled = state.isRunning
 
             state.completedRewardCoins?.let { earned ->
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.focus_reward_toast, earned),
-                    Toast.LENGTH_SHORT
-                ).show()
-                viewModel.onRewardMessageShown()
+                showRewardDialog(earned)
             }
 
             if (!binding.etIntervalMinutes.hasFocus()) {
@@ -93,7 +93,29 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
         }
     }
 
+    private fun showRewardDialog(earned: Int) {
+        if (!isAdded) return
+        if (rewardDialog?.isShowing == true) return
+
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_focus_completion, null)
+        dialogView.findViewById<TextView>(R.id.tvRewardCoins).text = earned.toString()
+
+        rewardDialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogView)
+            .setCancelable(false)
+            .setPositiveButton(R.string.focus_reward_close) { _, _
+                -> viewModel.onRewardMessageShown() }
+            .setOnDismissListener {
+                viewModel.onRewardMessageShown()
+                rewardDialog = null
+            }
+            .show()
+    }
+
     override fun onDestroyView() {
+        rewardDialog?.dismiss()
+        rewardDialog = null
         super.onDestroyView()
         _binding = null
     }
