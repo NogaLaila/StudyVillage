@@ -1,13 +1,19 @@
 package com.example.studyvillage.ui.social
 
+import android.net.Uri
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,8 +29,15 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.example.studyvillage.util.UserSession
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
+import kotlin.math.max
 
 class SocialFragment : Fragment(R.layout.fragment_social) {
+	private companion object {
+		const val TAG = "SocialFragment"
+		const val MAX_IMAGE_DIMENSION = 1080
+		const val MAX_BASE64_CHARS = 700_000
+	}
 
 	private var postsView: RecyclerView? = null
 	private var emptyStateView: TextView? = null
@@ -35,6 +48,18 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 	private lateinit var postRepository: PostRepository
 	private lateinit var userRepository: UserRepository
 	private val postAdapter = PostAdapter()
+	private var activeDialogBinding: DialogCreatePostBinding? = null
+	private var isImageUploading = false
+	private var pendingPickedImageBase64: String? = null
+
+	private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+		if (uri == null) {
+			Log.d(TAG, "No image selected")
+			return@registerForActivityResult
+		}
+		Log.d(TAG, "Image selected: $uri")
+		uploadPickedImage(uri)
+	}
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
@@ -101,6 +126,14 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 		val dialog = MaterialAlertDialogBuilder(requireContext())
 			.setView(dialogBinding.root)
 			.create()
+		activeDialogBinding = dialogBinding
+		pendingPickedImageBase64 = null
+
+		dialog.setOnDismissListener {
+			activeDialogBinding = null
+			isImageUploading = false
+			pendingPickedImageBase64 = null
+		}
 
 		dialog.setOnShowListener {
 			dialogBinding.ivSparkleLeft.apply {
@@ -132,10 +165,17 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			dialog.dismiss()
 		}
 
+		dialogBinding.btnPickImage.setOnClickListener {
+			pickImageLauncher.launch(
+				PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+			)
+		}
+
 		dialogBinding.btnSubmitPost.setOnClickListener {
 			val title = dialogBinding.etTitle.text?.toString()?.trim().orEmpty()
 			val content = dialogBinding.etContent.text?.toString()?.trim().orEmpty()
-			val image = dialogBinding.etImage.text?.toString()?.trim().orEmpty()
+			val typedImage = dialogBinding.etImage.text?.toString()?.trim().orEmpty()
+			val image = if (typedImage.isNotBlank()) typedImage else pendingPickedImageBase64.orEmpty()
 			val createdBy = UserSession.currentUid
 
 			dialogBinding.inputTitle.error = null
@@ -157,6 +197,10 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 				Toast.makeText(requireContext(), R.string.social_post_failed, Toast.LENGTH_SHORT).show()
 				return@setOnClickListener
 			}
+			if (isImageUploading) {
+				Toast.makeText(requireContext(), R.string.social_image_uploading_wait, Toast.LENGTH_SHORT).show()
+				return@setOnClickListener
+			}
 
 			dialogBinding.btnSubmitPost.isEnabled = false
 			viewLifecycleOwner.lifecycleScope.launch {
@@ -169,8 +213,11 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 						Toast.makeText(requireContext(), R.string.social_post_added, Toast.LENGTH_SHORT).show()
 						dialog.dismiss()
 					}
-					.onFailure {
-						Toast.makeText(requireContext(), R.string.social_post_failed, Toast.LENGTH_SHORT).show()
+					.onFailure { error ->
+						Log.e(TAG, "Post creation failed", error)
+						val message = error.message?.take(120)
+							?: getString(R.string.social_post_failed)
+						Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
 						dialogBinding.btnSubmitPost.isEnabled = true
 					}
 			}
@@ -178,6 +225,104 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 
 		dialog.show()
 		dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+	}
+
+	private fun uploadPickedImage(uri: Uri) {
+		val dialogBinding = activeDialogBinding ?: return
+		if (isImageUploading) return
+		if (UserSession.currentUid.isNullOrBlank()) {
+			Toast.makeText(requireContext(), R.string.social_upload_sign_in_required, Toast.LENGTH_SHORT).show()
+			return
+		}
+
+		isImageUploading = true
+		dialogBinding.btnPickImage.isEnabled = false
+		dialogBinding.tvImageSourceStatus.visibility = View.VISIBLE
+		dialogBinding.tvImageSourceStatus.text = getString(R.string.social_uploading_image)
+
+		viewLifecycleOwner.lifecycleScope.launch {
+			runCatching {
+				uploadImageToStorage(uri)
+			}.onSuccess { imageReference ->
+				pendingPickedImageBase64 = imageReference
+				// Keep the URL field for optional web links; picked image is stored in-memory.
+				dialogBinding.etImage.setText("")
+				dialogBinding.tvImageSourceStatus.text = getString(R.string.social_image_selected_from_phone)
+			}.onFailure { error ->
+				Log.e(TAG, "Image upload failed for uri=$uri", error)
+				dialogBinding.tvImageSourceStatus.text = getUploadErrorMessage(error)
+				Toast.makeText(requireContext(), dialogBinding.tvImageSourceStatus.text, Toast.LENGTH_SHORT).show()
+			}
+
+			isImageUploading = false
+			dialogBinding.btnPickImage.isEnabled = true
+		}
+	}
+
+	private suspend fun uploadImageToStorage(uri: Uri): String {
+		try {
+			Log.d(TAG, "Converting image to Base64 from URI: $uri")
+			
+			// Step 1: Read image bytes from picker URI
+			val contentResolver = requireContext().contentResolver
+			val inputStream = contentResolver.openInputStream(uri) 
+				?: throw IllegalStateException("Cannot open input stream for URI: $uri")
+			
+			val fileBytes = inputStream.use { it.readBytes() }
+			Log.d(TAG, "Read ${fileBytes.size} bytes from URI")
+
+			// Step 2: Decode + resize + compress to stay safely below Firestore doc limit.
+			val decoded = BitmapFactory.decodeByteArray(fileBytes, 0, fileBytes.size)
+				?: throw IllegalStateException("Could not decode selected image")
+
+			val longestSide = max(decoded.width, decoded.height)
+			val resized: Bitmap = if (longestSide > MAX_IMAGE_DIMENSION) {
+				val scale = MAX_IMAGE_DIMENSION.toFloat() / longestSide.toFloat()
+				Bitmap.createScaledBitmap(
+					decoded,
+					(decoded.width * scale).toInt().coerceAtLeast(1),
+					(decoded.height * scale).toInt().coerceAtLeast(1),
+					true
+				)
+			} else {
+				decoded
+			}
+
+			val output = ByteArrayOutputStream()
+			var quality = 82
+			var finalBase64: String? = null
+
+			while (quality >= 45) {
+				output.reset()
+				resized.compress(Bitmap.CompressFormat.JPEG, quality, output)
+				val compressedBytes = output.toByteArray()
+				val base64 = android.util.Base64.encodeToString(compressedBytes, android.util.Base64.NO_WRAP)
+				if (base64.length <= MAX_BASE64_CHARS) {
+					finalBase64 = base64
+					break
+				}
+				quality -= 7
+			}
+
+			if (resized !== decoded) resized.recycle()
+			decoded.recycle()
+			output.close()
+
+			if (finalBase64 == null) {
+				throw IllegalStateException("Image is too large. Please choose a smaller photo.")
+			}
+
+			Log.d(TAG, "Converted to Base64 string, length: ${finalBase64.length}")
+			return finalBase64
+			
+		} catch (e: Exception) {
+			Log.e(TAG, "Error converting image to Base64", e)
+			throw e
+		}
+	}
+
+	private fun getUploadErrorMessage(error: Throwable): String {
+		return error.message?.take(100) ?: "Image upload failed"
 	}
 
 	override fun onDestroyView() {
