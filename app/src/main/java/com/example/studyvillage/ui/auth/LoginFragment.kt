@@ -25,7 +25,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
         val db = DataBaseProvider.get(requireContext())
         val userRepo = UserRepository(db.userDao(), UserRemote())
-        val factory = AuthViewModelFactory(userRepo)
+        val factory = AuthViewModelFactory(requireActivity().application, userRepo)
         viewModel = ViewModelProvider(this, factory)[AuthViewModel::class.java]
 
         binding.btnSignIn.setOnClickListener {

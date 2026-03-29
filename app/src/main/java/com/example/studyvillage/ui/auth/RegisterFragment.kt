@@ -1,8 +1,10 @@
 package com.example.studyvillage.ui.auth
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -18,6 +20,15 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
     private val binding get() = _binding!!
 
     private lateinit var viewModel: AuthViewModel
+    private var selectedImageUri: Uri? = null
+
+    private val pickImageLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri != null) {
+                selectedImageUri = uri
+                binding.ivProfile.setImageURI(uri)
+            }
+        }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -25,8 +36,16 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
 
         val db = DataBaseProvider.get(requireContext())
         val userRepo = UserRepository(db.userDao(), UserRemote())
-        val factory = AuthViewModelFactory(userRepo)
+        val factory = AuthViewModelFactory(requireActivity().application, userRepo)
         viewModel = ViewModelProvider(this, factory)[AuthViewModel::class.java]
+
+        binding.btnPickImage.setOnClickListener {
+            pickImageLauncher.launch("image/*")
+        }
+
+        binding.ivProfile.setOnClickListener {
+            pickImageLauncher.launch("image/*")
+        }
 
         binding.btnRegister.setOnClickListener {
             val name = binding.etName.text?.toString()?.trim().orEmpty()
@@ -41,7 +60,7 @@ class RegisterFragment : Fragment(R.layout.fragment_register) {
                 confirm.isBlank() -> toast("Confirm password")
                 password != confirm -> toast("Passwords do not match")
                 password.length < 6 -> toast("Password must be at least 6 characters")
-                else -> viewModel.register(name, email, password)
+                else -> viewModel.register(name, email, password, selectedImageUri)
             }
         }
 
