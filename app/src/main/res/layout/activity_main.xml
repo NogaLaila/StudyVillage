@@ -55,8 +55,8 @@
         app:itemTextAppearanceInactive="@style/BottomNavText"
         app:itemTextColor="@null"
         app:labelVisibilityMode="labeled"
-        app:layout_anchor="@id/frameLayout"
-        app:layout_anchorGravity="top|center"
+        app:layout_anchor="@+id/bottom_nav_bg"
+        app:layout_anchorGravity="center"
         app:menu="@menu/menu_bottom_nav" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
