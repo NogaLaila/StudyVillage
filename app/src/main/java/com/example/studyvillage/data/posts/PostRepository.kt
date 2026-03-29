@@ -20,9 +20,10 @@ class PostRepository(
     suspend fun addPost(
         title: String,
         content: String,
-        image: String
+        image: String,
+        createdBy: String
     ): PostEntity {
-        val post = remote.createPost(title, content, image)
+        val post = remote.createPost(title, content, image, createdBy)
         postDao.insert(post)
         return post
     }

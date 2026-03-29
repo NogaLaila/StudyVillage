@@ -110,6 +110,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			val title = dialogBinding.etTitle.text?.toString()?.trim().orEmpty()
 			val content = dialogBinding.etContent.text?.toString()?.trim().orEmpty()
 			val image = dialogBinding.etImage.text?.toString()?.trim().orEmpty()
+			val createdBy = UserSession.currentUid
 
 			dialogBinding.inputTitle.error = null
 			dialogBinding.inputContent.error = null
@@ -126,10 +127,14 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			}
 
 			if (hasError) return@setOnClickListener
+			if (createdBy.isNullOrBlank()) {
+				Toast.makeText(requireContext(), R.string.social_post_failed, Toast.LENGTH_SHORT).show()
+				return@setOnClickListener
+			}
 
 			dialogBinding.btnSubmitPost.isEnabled = false
 			viewLifecycleOwner.lifecycleScope.launch {
-				runCatching { postRepository.addPost(title, content, image) }
+				runCatching { postRepository.addPost(title, content, image, createdBy) }
 					.onSuccess {
 						val posts = runCatching { postRepository.getCachedPosts() }
 							.getOrDefault(emptyList())

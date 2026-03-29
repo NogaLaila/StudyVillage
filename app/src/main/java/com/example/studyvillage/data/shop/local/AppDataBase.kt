@@ -18,7 +18,7 @@ import com.example.studyvillage.data.user.local.UserEntity
         OwnedInstanceEntity::class,
         PostEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDataBase : RoomDatabase() {

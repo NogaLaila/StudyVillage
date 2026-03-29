@@ -19,6 +19,7 @@ class PostRemote(
             val title = document.getString("title")?.trim().orEmpty()
             val content = document.getString("content")?.trim().orEmpty()
             val image = document.getString("image")?.trim().orEmpty()
+            val createdBy = document.getString("createdBy")?.trim().orEmpty().ifBlank { "unknown" }
             if (title.isBlank() || content.isBlank()) {
                 return@mapNotNull null
             }
@@ -28,7 +29,8 @@ class PostRemote(
                 title = title,
                 content = content,
                 image = image,
-                createdAt = document.getLong("createdAt") ?: 0L
+                createdBy = createdBy,
+                createdAt = document.getLong("createdAt") ?: System.currentTimeMillis()
             )
         }
     }
@@ -36,7 +38,8 @@ class PostRemote(
     suspend fun createPost(
         title: String,
         content: String,
-        image: String
+        image: String,
+        createdBy: String
     ): PostEntity {
         val document = firestore.collection("posts").document()
         val now = System.currentTimeMillis()
@@ -45,6 +48,7 @@ class PostRemote(
             title = title.trim(),
             content = content.trim(),
             image = image.trim(),
+            createdBy = createdBy.trim(),
             createdAt = now
         )
 
@@ -53,6 +57,7 @@ class PostRemote(
                 "title" to post.title,
                 "content" to post.content,
                 "image" to post.image,
+                "createdBy" to post.createdBy,
                 "createdAt" to post.createdAt
             )
         ).await()

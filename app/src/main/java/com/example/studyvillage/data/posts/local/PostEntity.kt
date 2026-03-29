@@ -9,6 +9,7 @@ data class PostEntity(
     val title: String,
     val content: String,
     val image: String,
+    val createdBy: String,
     val createdAt: Long
 )
 
