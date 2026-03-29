@@ -43,8 +43,15 @@
                 android:layout_marginTop="8dp"
                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                 tools:text="Break your study block into 25-minute sessions, put your phone away, and take a quick walk between rounds." />
+
+            <TextView
+                android:id="@+id/tvPostCreatedBy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                tools:text="Created by: @tali" />
         </LinearLayout>
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>
-

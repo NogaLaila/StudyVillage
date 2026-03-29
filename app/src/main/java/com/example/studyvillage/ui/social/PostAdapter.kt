@@ -46,6 +46,10 @@ class PostAdapter(
         fun bind(post: PostEntity) {
             binding.tvPostTitle.text = post.title
             binding.tvPostContent.text = post.content
+            val createdByValue = post.createdBy.trim().ifBlank { "unknown" }
+            val handle = if (createdByValue.startsWith("@")) createdByValue else "@$createdByValue"
+            binding.tvPostCreatedBy.text =
+                itemView.context.getString(R.string.social_post_created_by, handle)
             binding.ivPostImage.contentDescription = post.title
 
             val image = post.image.trim()
@@ -112,4 +116,3 @@ class PostAdapter(
         }
     }
 }
-

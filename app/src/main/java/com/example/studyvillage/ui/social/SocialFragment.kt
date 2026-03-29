@@ -37,6 +37,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 		const val TAG = "SocialFragment"
 		const val MAX_IMAGE_DIMENSION = 1080
 		const val MAX_BASE64_CHARS = 700_000
+		val UID_PATTERN = Regex("^[A-Za-z0-9]{20,}$")
 	}
 
 	private var postsView: RecyclerView? = null
@@ -93,7 +94,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			val localCoins = userRepository.getLocalUser(uid)?.coins ?: 0L
 			coinsView?.text = localCoins.toString()
 
-			runCatching { userRepository.syncUser(uid, email) }
+			runCatching { userRepository.syncUser(uid, email, UserSession.currentName) }
 			val updatedCoins = userRepository.getLocalUser(uid)?.coins ?: localCoins
 			coinsView?.text = updatedCoins.toString()
 		}
@@ -105,12 +106,12 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 
 			val cachedPosts = runCatching { postRepository.getCachedPosts() }
 				.getOrDefault(emptyList())
-			postAdapter.submit(cachedPosts)
+			postAdapter.submit(resolvePostsForDisplay(cachedPosts))
 			emptyStateView?.visibility = if (cachedPosts.isEmpty()) View.VISIBLE else View.GONE
 
 			runCatching { postRepository.refreshPosts() }
 				.onSuccess { freshPosts ->
-					postAdapter.submit(freshPosts)
+					postAdapter.submit(resolvePostsForDisplay(freshPosts))
 					emptyStateView?.visibility = if (freshPosts.isEmpty()) View.VISIBLE else View.GONE
 				}
 				.onFailure {
@@ -176,7 +177,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			val content = dialogBinding.etContent.text?.toString()?.trim().orEmpty()
 			val typedImage = dialogBinding.etImage.text?.toString()?.trim().orEmpty()
 			val image = if (typedImage.isNotBlank()) typedImage else pendingPickedImageBase64.orEmpty()
-			val createdBy = UserSession.currentUid
+			val currentUid = UserSession.currentUid
 
 			dialogBinding.inputTitle.error = null
 			dialogBinding.inputContent.error = null
@@ -193,7 +194,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			}
 
 			if (hasError) return@setOnClickListener
-			if (createdBy.isNullOrBlank()) {
+			if (currentUid.isNullOrBlank()) {
 				Toast.makeText(requireContext(), R.string.social_post_failed, Toast.LENGTH_SHORT).show()
 				return@setOnClickListener
 			}
@@ -204,11 +205,11 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 
 			dialogBinding.btnSubmitPost.isEnabled = false
 			viewLifecycleOwner.lifecycleScope.launch {
-				runCatching { postRepository.addPost(title, content, image, createdBy) }
+				runCatching { postRepository.addPost(title, content, image, currentUid) }
 					.onSuccess {
 						val posts = runCatching { postRepository.getCachedPosts() }
 							.getOrDefault(emptyList())
-						postAdapter.submit(posts)
+						postAdapter.submit(resolvePostsForDisplay(posts))
 						emptyStateView?.visibility = if (posts.isEmpty()) View.VISIBLE else View.GONE
 						Toast.makeText(requireContext(), R.string.social_post_added, Toast.LENGTH_SHORT).show()
 						dialog.dismiss()
@@ -225,6 +226,34 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 
 		dialog.show()
 		dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+	}
+
+	private suspend fun resolvePostsForDisplay(posts: List<com.example.studyvillage.data.posts.local.PostEntity>): List<com.example.studyvillage.data.posts.local.PostEntity> {
+		if (posts.isEmpty()) return posts
+
+		val nameCache = mutableMapOf<String, String?>()
+		return posts.map { post ->
+			val rawCreatedBy = post.createdBy.trim()
+			if (rawCreatedBy.isBlank()) return@map post.copy(createdBy = "unknown")
+
+			if (!looksLikeUid(rawCreatedBy)) {
+				val normalized = rawCreatedBy.removePrefix("@").trim().ifBlank { "unknown" }
+				return@map post.copy(createdBy = normalized)
+			}
+
+			if (!nameCache.containsKey(rawCreatedBy)) {
+				nameCache[rawCreatedBy] = runCatching {
+					userRepository.getDisplayNameByUid(rawCreatedBy)
+				}.getOrNull()
+			}
+
+			val resolvedName = nameCache[rawCreatedBy]?.trim().orEmpty()
+			post.copy(createdBy = resolvedName.ifBlank { rawCreatedBy })
+		}
+	}
+
+	private fun looksLikeUid(value: String): Boolean {
+		return UID_PATTERN.matches(value)
 	}
 
 	private fun uploadPickedImage(uri: Uri) {

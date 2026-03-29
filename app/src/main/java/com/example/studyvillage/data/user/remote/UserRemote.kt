@@ -8,6 +8,24 @@ class UserRemote(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
+    suspend fun getUser(uid: String): UserEntity? {
+        val snap = firestore.collection("users").document(uid).get().await()
+        if (!snap.exists()) return null
+
+        val coins = snap.getLong("coins") ?: 0L
+        val remoteName = snap.getString("name")
+        val photoUrl = snap.getString("photoUrl")
+        val email = snap.getString("email")
+
+        return UserEntity(
+            uid = uid,
+            email = email,
+            name = remoteName,
+            photoUrl = photoUrl,
+            coins = coins
+        )
+    }
+
     suspend fun getOrCreateUser(
         uid: String,
         email: String?,
