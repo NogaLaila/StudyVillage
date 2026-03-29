@@ -7,14 +7,48 @@
     android:orientation="vertical"
     android:padding="20dp">
 
-    <TextView
-        android:id="@+id/tvDialogTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/social_create_post_title"
-        android:textColor="#3E2E2A"
-        android:textSize="22sp"
-        android:textStyle="bold" />
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/ivSparkleLeft"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:alpha="0.85"
+            android:contentDescription="@null"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_social_sparkle"
+            app:layout_constraintBottom_toBottomOf="@id/tvDialogTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvDialogTitle" />
+
+        <TextView
+            android:id="@+id/tvDialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="35dp"
+            android:text="@string/social_create_post_title"
+            android:textColor="#3E2E2A"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/ivSparkleRight"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:alpha="0.75"
+            android:contentDescription="@null"
+            android:importantForAccessibility="no"
+            android:rotation="18"
+            android:src="@drawable/ic_social_sparkle"
+            app:layout_constraintBottom_toTopOf="@id/tvDialogTitle"
+            app:layout_constraintStart_toEndOf="@id/tvDialogTitle"
+            android:layout_marginStart="6dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/inputTitle"
@@ -78,6 +112,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/social_cancel_action"
+            android:textColor="?attr/colorTertiaryFixedDim"
+            android:textColorHighlight="@null"
+            android:textColorHint="@null"
+            android:textColorLink="?attr/colorTertiaryFixedDim"
             app:backgroundTint="@android:color/transparent" />
 
         <com.google.android.material.button.MaterialButton
@@ -85,6 +123,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:background="@drawable/bg_focus_button_sakura"
+            app:backgroundTint="@null"
             android:text="@string/social_post_action" />
     </LinearLayout>
 

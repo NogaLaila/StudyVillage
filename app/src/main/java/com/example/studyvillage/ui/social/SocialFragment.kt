@@ -102,6 +102,32 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			.setView(dialogBinding.root)
 			.create()
 
+		dialog.setOnShowListener {
+			dialogBinding.ivSparkleLeft.apply {
+				scaleX = 0.7f
+				scaleY = 0.7f
+				alpha = 0.2f
+				animate()
+					.alpha(0.85f)
+					.scaleX(1f)
+					.scaleY(1f)
+					.setDuration(260)
+					.start()
+			}
+			dialogBinding.ivSparkleRight.apply {
+				scaleX = 0.7f
+				scaleY = 0.7f
+				alpha = 0.2f
+				animate()
+					.alpha(0.75f)
+					.scaleX(1f)
+					.scaleY(1f)
+					.setStartDelay(90)
+					.setDuration(260)
+					.start()
+			}
+		}
+
 		dialogBinding.btnCancelPost.setOnClickListener {
 			dialog.dismiss()
 		}
