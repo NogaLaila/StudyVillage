@@ -19,4 +19,17 @@
     <string name="focus_picker_caption">%1$d minutes</string>
     <string name="focus_picker_apply">Apply</string>
     <string name="focus_picker_cancel">Cancel</string>
+    <string name="social_title">Social</string>
+    <string name="social_create_post">Create</string>
+    <string name="social_empty">No posts yet. Be the first to post.</string>
+    <string name="social_create_post_title">Create Post</string>
+    <string name="social_post_title_hint">Title</string>
+    <string name="social_post_content_hint">Content</string>
+    <string name="social_post_image_hint">Image URL</string>
+    <string name="social_post_action">Post</string>
+    <string name="social_cancel_action">Cancel</string>
+    <string name="social_post_added">Post created</string>
+    <string name="social_load_failed">Could not refresh posts</string>
+    <string name="social_post_failed">Could not create post</string>
+    <string name="social_field_required">Required</string>
 </resources>
