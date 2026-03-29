@@ -1,73 +1,79 @@
 package com.example.studyvillage.data.user.remote
 
+import com.example.studyvillage.data.user.UserRepository
 import com.example.studyvillage.data.user.local.UserEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
-class UserRemote(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-) {
+class UserRemote {
+
+    private val firestore = FirebaseFirestore.getInstance()
+    private val usersCollection = firestore.collection("users")
 
     suspend fun getUser(uid: String): UserEntity? {
-        val snap = firestore.collection("users").document(uid).get().await()
-        if (!snap.exists()) return null
-
-        val coins = snap.getLong("coins") ?: 0L
-        val remoteName = snap.getString("name")
-        val photoUrl = snap.getString("photoUrl")
-        val email = snap.getString("email")
+        val snapshot = usersCollection.document(uid).get().await()
+        if (!snapshot.exists()) return null
 
         return UserEntity(
             uid = uid,
-            email = email,
-            name = remoteName,
-            photoUrl = photoUrl,
-            coins = coins
+            email = snapshot.getString("email"),
+            name = snapshot.getString("name"),
+            photoUrl = snapshot.getString("photoUrl") ?: UserRepository.DEFAULT_PROFILE_PHOTO,
+            coins = snapshot.getLong("coins") ?: 0L
         )
     }
 
     suspend fun getOrCreateUser(
         uid: String,
         email: String?,
-        name: String?
+        name: String?,
+        photoUrl: String?
     ): UserEntity {
-        val docRef = firestore.collection("users").document(uid)
-        val snap = docRef.get().await()
+        val existing = getUser(uid)
 
-        return if (snap.exists()) {
-            val coins = snap.getLong("coins") ?: 0L
-            val remoteName = snap.getString("name")
-            val photoUrl = snap.getString("photoUrl")
-            UserEntity(
-                uid = uid,
-                email = email,
-                name = remoteName ?: name,
-                photoUrl = photoUrl,
-                coins = coins
+        if (existing != null) {
+            val updated = existing.copy(
+                email = email ?: existing.email,
+                name = name ?: existing.name,
+                photoUrl = photoUrl ?: existing.photoUrl ?: UserRepository.DEFAULT_PROFILE_PHOTO
             )
-        } else {
-            val newUser = hashMapOf(
-                "uid" to uid,
-                "email" to email,
-                "name" to name,
-                "photoUrl" to null,
-                "coins" to 0L
-            )
-            docRef.set(newUser).await()
 
-            UserEntity(
-                uid = uid,
-                email = email,
-                name = name,
-                photoUrl = null,
-                coins = 0L
-            )
+            usersCollection.document(uid).set(
+                mapOf(
+                    "uid" to updated.uid,
+                    "email" to updated.email,
+                    "name" to updated.name,
+                    "photoUrl" to updated.photoUrl,
+                    "coins" to updated.coins
+                )
+            ).await()
+
+            return updated
         }
+
+        val newUser = UserEntity(
+            uid = uid,
+            email = email,
+            name = name,
+            photoUrl = photoUrl ?: UserRepository.DEFAULT_PROFILE_PHOTO,
+            coins = 0L
+        )
+
+        usersCollection.document(uid).set(
+            mapOf(
+                "uid" to newUser.uid,
+                "email" to newUser.email,
+                "name" to newUser.name,
+                "photoUrl" to newUser.photoUrl,
+                "coins" to newUser.coins
+            )
+        ).await()
+
+        return newUser
     }
 
     suspend fun updateCoins(uid: String, newCoins: Long) {
-        firestore.collection("users")
-            .document(uid)
+        usersCollection.document(uid)
             .update("coins", newCoins)
             .await()
     }

@@ -9,6 +9,10 @@ class UserRepository(
     private val remote: UserRemote
 ) {
 
+    companion object {
+        const val DEFAULT_PROFILE_PHOTO = "default_profile_panda"
+    }
+
     suspend fun getDisplayNameByUid(uid: String): String? {
         val localName = userDao.getUserById(uid)?.name?.trim().orEmpty()
         if (localName.isNotBlank()) return localName
@@ -18,8 +22,14 @@ class UserRepository(
         return remoteUser.name?.trim()?.takeIf { it.isNotBlank() }
     }
 
-    suspend fun syncUser(uid: String, email: String?, name: String? = null) {
-        val remoteUser = remote.getOrCreateUser(uid, email, name)
+    suspend fun syncUser(
+        uid: String,
+        email: String?,
+        name: String? = null,
+        photoUrl: String? = null
+    ) {
+        val safePhotoUrl = photoUrl ?: DEFAULT_PROFILE_PHOTO
+        val remoteUser = remote.getOrCreateUser(uid, email, name, safePhotoUrl)
         userDao.insert(remoteUser)
     }
 
@@ -32,9 +42,16 @@ class UserRepository(
             return userDao.getUserById(uid)?.coins ?: 0L
         }
 
-        val baseUser = userDao.getUserById(uid) ?: remote.getOrCreateUser(uid, null, null).also {
-            userDao.insert(it)
-        }
+        val baseUser = userDao.getUserById(uid)
+            ?: remote.getOrCreateUser(
+                uid = uid,
+                email = null,
+                name = null,
+                photoUrl = DEFAULT_PROFILE_PHOTO
+            ).also {
+                userDao.insert(it)
+            }
+
         val newCoins = baseUser.coins + amount
 
         remote.updateCoins(uid, newCoins)
