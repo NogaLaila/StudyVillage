@@ -25,7 +25,7 @@
     <string name="social_create_post_title">Create Post</string>
     <string name="social_post_title_hint">Title</string>
     <string name="social_post_content_hint">Content</string>
-    <string name="social_post_image_hint">Image URL</string>
+    <string name="social_post_image_hint">Image URL (optional)</string>
     <string name="social_post_action">Post</string>
     <string name="social_cancel_action">Cancel</string>
     <string name="social_post_added">Post created</string>

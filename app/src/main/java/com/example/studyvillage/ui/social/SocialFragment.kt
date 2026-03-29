@@ -1,5 +1,7 @@
 package com.example.studyvillage.ui.social
 
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -97,59 +99,54 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 	private fun showCreatePostDialog() {
 		val dialogBinding = DialogCreatePostBinding.inflate(LayoutInflater.from(requireContext()))
 		val dialog = MaterialAlertDialogBuilder(requireContext())
-			.setTitle(R.string.social_create_post_title)
 			.setView(dialogBinding.root)
-			.setNegativeButton(R.string.social_cancel_action, null)
-			.setPositiveButton(R.string.social_post_action, null)
 			.create()
 
-		dialog.setOnShowListener {
-			val positiveButton = dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
-			positiveButton.setOnClickListener {
-				val title = dialogBinding.etTitle.text?.toString()?.trim().orEmpty()
-				val content = dialogBinding.etContent.text?.toString()?.trim().orEmpty()
-				val image = dialogBinding.etImage.text?.toString()?.trim().orEmpty()
+		dialogBinding.btnCancelPost.setOnClickListener {
+			dialog.dismiss()
+		}
 
-				dialogBinding.inputTitle.error = null
-				dialogBinding.inputContent.error = null
-				dialogBinding.inputImage.error = null
+		dialogBinding.btnSubmitPost.setOnClickListener {
+			val title = dialogBinding.etTitle.text?.toString()?.trim().orEmpty()
+			val content = dialogBinding.etContent.text?.toString()?.trim().orEmpty()
+			val image = dialogBinding.etImage.text?.toString()?.trim().orEmpty()
 
-				var hasError = false
-				if (title.isBlank()) {
-					dialogBinding.inputTitle.error = getString(R.string.social_field_required)
-					hasError = true
-				}
-				if (content.isBlank()) {
-					dialogBinding.inputContent.error = getString(R.string.social_field_required)
-					hasError = true
-				}
-				if (image.isBlank()) {
-					dialogBinding.inputImage.error = getString(R.string.social_field_required)
-					hasError = true
-				}
+			dialogBinding.inputTitle.error = null
+			dialogBinding.inputContent.error = null
+			dialogBinding.inputImage.error = null
 
-				if (hasError) return@setOnClickListener
+			var hasError = false
+			if (title.isBlank()) {
+				dialogBinding.inputTitle.error = getString(R.string.social_field_required)
+				hasError = true
+			}
+			if (content.isBlank()) {
+				dialogBinding.inputContent.error = getString(R.string.social_field_required)
+				hasError = true
+			}
 
-				positiveButton.isEnabled = false
-				viewLifecycleOwner.lifecycleScope.launch {
-					runCatching { postRepository.addPost(title, content, image) }
-						.onSuccess {
-							val posts = runCatching { postRepository.getCachedPosts() }
-								.getOrDefault(emptyList())
-							postAdapter.submit(posts)
-							emptyStateView?.visibility = if (posts.isEmpty()) View.VISIBLE else View.GONE
-							Toast.makeText(requireContext(), R.string.social_post_added, Toast.LENGTH_SHORT).show()
-							dialog.dismiss()
-						}
-						.onFailure {
-							Toast.makeText(requireContext(), R.string.social_post_failed, Toast.LENGTH_SHORT).show()
-							positiveButton.isEnabled = true
-						}
-				}
+			if (hasError) return@setOnClickListener
+
+			dialogBinding.btnSubmitPost.isEnabled = false
+			viewLifecycleOwner.lifecycleScope.launch {
+				runCatching { postRepository.addPost(title, content, image) }
+					.onSuccess {
+						val posts = runCatching { postRepository.getCachedPosts() }
+							.getOrDefault(emptyList())
+						postAdapter.submit(posts)
+						emptyStateView?.visibility = if (posts.isEmpty()) View.VISIBLE else View.GONE
+						Toast.makeText(requireContext(), R.string.social_post_added, Toast.LENGTH_SHORT).show()
+						dialog.dismiss()
+					}
+					.onFailure {
+						Toast.makeText(requireContext(), R.string.social_post_failed, Toast.LENGTH_SHORT).show()
+						dialogBinding.btnSubmitPost.isEnabled = true
+					}
 			}
 		}
 
 		dialog.show()
+		dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 	}
 
 	override fun onDestroyView() {

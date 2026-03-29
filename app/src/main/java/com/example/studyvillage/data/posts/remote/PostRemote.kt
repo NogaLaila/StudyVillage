@@ -19,7 +19,7 @@ class PostRemote(
             val title = document.getString("title")?.trim().orEmpty()
             val content = document.getString("content")?.trim().orEmpty()
             val image = document.getString("image")?.trim().orEmpty()
-            if (title.isBlank() || content.isBlank() || image.isBlank()) {
+            if (title.isBlank() || content.isBlank()) {
                 return@mapNotNull null
             }
 
