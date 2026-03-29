@@ -14,9 +14,12 @@ import com.example.studyvillage.R
 import com.example.studyvillage.data.posts.PostRepository
 import com.example.studyvillage.data.posts.remote.PostRemote
 import com.example.studyvillage.data.shop.local.DataBaseProvider
+import com.example.studyvillage.data.user.UserRepository
+import com.example.studyvillage.data.user.remote.UserRemote
 import com.example.studyvillage.databinding.DialogCreatePostBinding
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.example.studyvillage.util.UserSession
 import kotlinx.coroutines.launch
 
 class SocialFragment : Fragment(R.layout.fragment_social) {
@@ -24,9 +27,11 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 	private var postsView: RecyclerView? = null
 	private var emptyStateView: TextView? = null
 	private var progressView: ProgressBar? = null
+	private var coinsView: TextView? = null
 	private var createPostButton: MaterialButton? = null
 
 	private lateinit var postRepository: PostRepository
+	private lateinit var userRepository: UserRepository
 	private val postAdapter = PostAdapter()
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -35,10 +40,12 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 		postsView = view.findViewById(R.id.rvPosts)
 		emptyStateView = view.findViewById(R.id.tvEmptySocial)
 		progressView = view.findViewById(R.id.progressSocial)
+		coinsView = view.findViewById(R.id.txtCoins)
 		createPostButton = view.findViewById(R.id.btnCreatePost)
 
 		val db = DataBaseProvider.get(requireContext())
 		postRepository = PostRepository(db.postDao(), PostRemote())
+		userRepository = UserRepository(db.userDao(), UserRemote())
 
 		postsView?.layoutManager = LinearLayoutManager(requireContext())
 		postsView?.adapter = postAdapter
@@ -47,7 +54,22 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			showCreatePostDialog()
 		}
 
+		loadCoins()
 		loadPosts()
+	}
+
+	private fun loadCoins() {
+		viewLifecycleOwner.lifecycleScope.launch {
+			val uid = UserSession.currentUid ?: return@launch
+			val email = UserSession.currentEmail
+
+			val localCoins = userRepository.getLocalUser(uid)?.coins ?: 0L
+			coinsView?.text = localCoins.toString()
+
+			runCatching { userRepository.syncUser(uid, email) }
+			val updatedCoins = userRepository.getLocalUser(uid)?.coins ?: localCoins
+			coinsView?.text = updatedCoins.toString()
+		}
 	}
 
 	private fun loadPosts() {
@@ -135,6 +157,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 		postsView = null
 		emptyStateView = null
 		progressView = null
+		coinsView = null
 		createPostButton = null
 	}
 }
