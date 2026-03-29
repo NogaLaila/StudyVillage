@@ -1,6 +1,6 @@
 plugins {
     // Fixed version for stability with Gradle 8.13
-    id("com.android.application") version "9.0.1" apply false
+    id("com.android.application") version "9.1.0" apply false
 
     // Aligning Kotlin to a stable 2.1.x release
     id("org.jetbrains.kotlin.android") version "2.2.10" apply false
