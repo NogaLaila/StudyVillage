@@ -6,6 +6,7 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -14,6 +15,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
+import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,6 +31,8 @@ import com.example.studyvillage.databinding.DialogCreatePostBinding
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.example.studyvillage.util.UserSession
+import com.squareup.picasso.Callback
+import com.squareup.picasso.Picasso
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import kotlin.math.max
@@ -135,6 +140,12 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			isImageUploading = false
 			pendingPickedImageBase64 = null
 		}
+
+		dialogBinding.etImage.doAfterTextChanged {
+			dialogBinding.inputImage.error = null
+			updateDialogPreviewFromInput(dialogBinding)
+		}
+		updateDialogPreviewFromInput(dialogBinding)
 
 		dialog.setOnShowListener {
 			dialogBinding.ivSparkleLeft.apply {
@@ -276,6 +287,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 				pendingPickedImageBase64 = imageReference
 				// Keep the URL field for optional web links; picked image is stored in-memory.
 				dialogBinding.etImage.setText("")
+				updateDialogPreviewFromInput(dialogBinding)
 				dialogBinding.tvImageSourceStatus.text = getString(R.string.social_image_selected_from_phone)
 			}.onFailure { error ->
 				Log.e(TAG, "Image upload failed for uri=$uri", error)
@@ -286,6 +298,73 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 			isImageUploading = false
 			dialogBinding.btnPickImage.isEnabled = true
 		}
+	}
+
+	private fun updateDialogPreviewFromInput(dialogBinding: DialogCreatePostBinding) {
+		val typedImage = dialogBinding.etImage.text?.toString()?.trim().orEmpty()
+		val selectedImage = if (typedImage.isNotBlank()) typedImage else pendingPickedImageBase64.orEmpty()
+		renderDialogImagePreview(dialogBinding, selectedImage)
+	}
+
+	private fun renderDialogImagePreview(dialogBinding: DialogCreatePostBinding, imageValue: String) {
+		val normalized = imageValue.trim()
+		if (normalized.isBlank()) {
+			dialogBinding.ivImagePreview.setImageDrawable(null)
+			dialogBinding.ivImagePreview.isVisible = false
+			return
+		}
+
+		if (isLikelyUrl(normalized)) {
+			dialogBinding.ivImagePreview.isVisible = true
+			Picasso.get()
+				.load(normalized)
+				.fit()
+				.centerCrop()
+				.into(dialogBinding.ivImagePreview, object : Callback {
+					override fun onSuccess() {
+						dialogBinding.ivImagePreview.isVisible = true
+					}
+
+					override fun onError(e: Exception?) {
+						dialogBinding.ivImagePreview.setImageDrawable(null)
+						dialogBinding.ivImagePreview.isVisible = false
+					}
+				})
+			return
+		}
+
+		val bitmap = decodeBase64ToBitmap(extractBase64Payload(normalized))
+		if (bitmap == null) {
+			dialogBinding.ivImagePreview.setImageDrawable(null)
+			dialogBinding.ivImagePreview.isVisible = false
+		} else {
+			dialogBinding.ivImagePreview.setImageBitmap(bitmap)
+			dialogBinding.ivImagePreview.isVisible = true
+		}
+	}
+
+	private fun isLikelyUrl(value: String): Boolean {
+		val lower = value.lowercase()
+		return lower.startsWith("http://") ||
+			lower.startsWith("https://") ||
+			lower.startsWith("content://") ||
+			lower.startsWith("file://")
+	}
+
+	private fun extractBase64Payload(value: String): String {
+		val commaIndex = value.indexOf(',')
+		return if (value.startsWith("data:") && commaIndex != -1) {
+			value.substring(commaIndex + 1)
+		} else {
+			value
+		}
+	}
+
+	private fun decodeBase64ToBitmap(base64: String) = try {
+		val imageBytes = Base64.decode(base64, Base64.DEFAULT)
+		BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+	} catch (_: IllegalArgumentException) {
+		null
 	}
 
 	private suspend fun uploadImageToStorage(uri: Uri): String {

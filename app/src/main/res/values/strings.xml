@@ -41,4 +41,5 @@
     <string name="social_upload_sign_in_required">Please sign in before attaching an image.</string>
     <string name="social_image_uploading_wait">Please wait for image upload to finish.</string>
     <string name="social_post_created_by">Created by: %1$s</string>
+    <string name="social_image_preview_content_description">Selected post image preview</string>
 </resources>
