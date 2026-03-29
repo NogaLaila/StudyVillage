@@ -9,6 +9,15 @@ class UserRepository(
     private val remote: UserRemote
 ) {
 
+    suspend fun getDisplayNameByUid(uid: String): String? {
+        val localName = userDao.getUserById(uid)?.name?.trim().orEmpty()
+        if (localName.isNotBlank()) return localName
+
+        val remoteUser = remote.getUser(uid) ?: return null
+        userDao.insert(remoteUser)
+        return remoteUser.name?.trim()?.takeIf { it.isNotBlank() }
+    }
+
     suspend fun syncUser(uid: String, email: String?, name: String? = null) {
         val remoteUser = remote.getOrCreateUser(uid, email, name)
         userDao.insert(remoteUser)

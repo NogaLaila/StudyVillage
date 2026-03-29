@@ -2,6 +2,8 @@ package com.example.studyvillage.data.shop.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.example.studyvillage.data.posts.PostDao
+import com.example.studyvillage.data.posts.local.PostEntity
 import com.example.studyvillage.data.shop.ShopDao
 import com.example.studyvillage.data.shop.local.ShopItemEntity
 import com.example.studyvillage.data.owned.local.OwnedInstanceDao
@@ -13,9 +15,10 @@ import com.example.studyvillage.data.user.local.UserEntity
     entities = [
         ShopItemEntity::class,
         UserEntity::class,
-        OwnedInstanceEntity::class
+        OwnedInstanceEntity::class,
+        PostEntity::class
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDataBase : RoomDatabase() {
@@ -24,4 +27,5 @@ abstract class AppDataBase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
     abstract fun ownedInstanceDao(): OwnedInstanceDao
+    abstract fun postDao(): PostDao
 }
