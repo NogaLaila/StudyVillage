@@ -14,7 +14,8 @@ import com.squareup.picasso.Picasso
 
 class PostAdapter(
     posts: List<PostEntity> = emptyList(),
-    private val onEditClick: ((PostEntity) -> Unit)? = null
+    private val onEditClick: ((PostEntity) -> Unit)? = null,
+    private val onDeleteClick: ((PostEntity) -> Unit)? = null
 ) : RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
 
     private val items = posts.toMutableList()
@@ -35,7 +36,12 @@ class PostAdapter(
     }
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
-        holder.bind(items[position], onEditClick)
+        holder.bind(items[position], onEditClick, onDeleteClick)
+    }
+
+    override fun onViewRecycled(holder: PostViewHolder) {
+        super.onViewRecycled(holder)
+        holder.clearImage()
     }
 
     override fun getItemCount(): Int = items.size
@@ -44,7 +50,19 @@ class PostAdapter(
         private val binding: ItemPostBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(post: PostEntity, onEditClick: ((PostEntity) -> Unit)?) {
+        fun clearImage() {
+            Picasso.get().cancelRequest(binding.ivPostImage)
+            binding.ivPostImage.setImageDrawable(null)
+            binding.ivPostImage.isVisible = false
+        }
+
+        fun bind(
+            post: PostEntity,
+            onEditClick: ((PostEntity) -> Unit)?,
+            onDeleteClick: ((PostEntity) -> Unit)?
+        ) {
+            clearImage()
+
             binding.tvPostTitle.text = post.title
             binding.tvPostContent.text = post.content
             val createdByValue = post.createdBy.trim().ifBlank { "unknown" }
@@ -58,13 +76,16 @@ class PostAdapter(
                 onEditClick?.invoke(post)
             }
 
+            binding.btnDeletePost.isVisible = onDeleteClick != null
+            binding.btnDeletePost.setOnClickListener {
+                onDeleteClick?.invoke(post)
+            }
+
             val image = post.image.trim()
+            val hasNoImage = image.isBlank() || image.equals("null", ignoreCase = true)
 
             when {
-                image.isBlank() -> {
-                    binding.ivPostImage.setImageDrawable(null)
-                    binding.ivPostImage.isVisible = false
-                }
+                hasNoImage -> Unit
                 isLikelyUrl(image) -> {
                     binding.ivPostImage.isVisible = true
                     Picasso.get()
