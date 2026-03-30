@@ -15,24 +15,31 @@ class PostRemote(
             .get()
             .await()
 
-        return snapshot.documents.mapNotNull { document ->
-            val title = document.getString("title")?.trim().orEmpty()
-            val content = document.getString("content")?.trim().orEmpty()
-            val image = document.getString("image")?.trim().orEmpty()
-            val createdBy = document.getString("createdBy")?.trim().orEmpty().ifBlank { "unknown" }
-            if (title.isBlank() || content.isBlank()) {
-                return@mapNotNull null
-            }
+        return snapshot.documents.mapNotNull { doc -> doc.toPostEntity() }
+    }
 
-            PostEntity(
-                id = document.id,
-                title = title,
-                content = content,
-                image = image,
-                createdBy = createdBy,
-                createdAt = document.getLong("createdAt") ?: System.currentTimeMillis()
-            )
-        }
+    suspend fun fetchPostsByUser(uid: String): List<PostEntity> {
+        val snapshot = firestore.collection("posts")
+            .whereEqualTo("createdBy", uid)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .get()
+            .await()
+
+        return snapshot.documents.mapNotNull { doc -> doc.toPostEntity() }
+    }
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.toPostEntity(): PostEntity? {
+        val title = getString("title")?.trim().orEmpty()
+        val content = getString("content")?.trim().orEmpty()
+        if (title.isBlank() || content.isBlank()) return null
+        return PostEntity(
+            id = id,
+            title = title,
+            content = content,
+            image = getString("image")?.trim().orEmpty(),
+            createdBy = getString("createdBy")?.trim().orEmpty().ifBlank { "unknown" },
+            createdAt = getLong("createdAt") ?: System.currentTimeMillis()
+        )
     }
 
     suspend fun createPost(

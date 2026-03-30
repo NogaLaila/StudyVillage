@@ -3,13 +3,20 @@ package com.example.studyvillage.ui.profile
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.studyvillage.R
+import com.example.studyvillage.data.posts.PostRepository
+import com.example.studyvillage.data.posts.remote.PostRemote
 import com.example.studyvillage.data.shop.local.DataBaseProvider
 import com.example.studyvillage.data.user.UserRepository
 import com.example.studyvillage.data.user.remote.UserRemote
+import com.example.studyvillage.ui.social.PostAdapter
 import com.example.studyvillage.util.UserSession
 import kotlinx.coroutines.launch
 
@@ -21,6 +28,11 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private var tvCoins: TextView? = null
     private var tvTopCoins: TextView? = null
     private var ivAvatar: ImageView? = null
+    private var rvMyPosts: RecyclerView? = null
+    private var tvEmptyMyPosts: TextView? = null
+    private var progressMyPosts: ProgressBar? = null
+
+    private val postAdapter = PostAdapter()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -30,8 +42,15 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         tvCoins = view.findViewById(R.id.tvProfileCoins)
         tvTopCoins = view.findViewById(R.id.txtCoins)
         ivAvatar = view.findViewById(R.id.ivProfileAvatar)
+        rvMyPosts = view.findViewById(R.id.rvMyPosts)
+        tvEmptyMyPosts = view.findViewById(R.id.tvEmptyMyPosts)
+        progressMyPosts = view.findViewById(R.id.progressMyPosts)
+
+        rvMyPosts?.layoutManager = LinearLayoutManager(requireContext())
+        rvMyPosts?.adapter = postAdapter
 
         loadProfile()
+        loadMyPosts()
     }
 
     private fun loadProfile() {
@@ -67,6 +86,39 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
     }
 
+    private fun loadMyPosts() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val uid = UserSession.currentUid ?: return@launch
+
+            val db = DataBaseProvider.get(requireContext())
+            val postRepo = PostRepository(db.postDao(), PostRemote())
+            val userRepo = UserRepository(db.userDao(), UserRemote())
+
+            // Resolve the current user's display name once
+            val localUser = userRepo.getLocalUser(uid)
+            val displayName = localUser?.name?.takeIf { it.isNotBlank() }
+                ?: UserSession.currentName
+                ?: "Adventurer"
+
+            fun resolveNames(posts: List<com.example.studyvillage.data.posts.local.PostEntity>) =
+                posts.map { it.copy(createdBy = displayName) }
+
+            // Show cached posts immediately
+            val cached = runCatching { postRepo.getCachedUserPosts(uid) }.getOrDefault(emptyList())
+            postAdapter.submit(resolveNames(cached))
+            tvEmptyMyPosts?.isVisible = cached.isEmpty()
+
+            // Refresh from remote
+            progressMyPosts?.isVisible = true
+            runCatching { postRepo.refreshUserPosts(uid) }
+                .onSuccess { fresh ->
+                    postAdapter.submit(resolveNames(fresh))
+                    tvEmptyMyPosts?.isVisible = fresh.isEmpty()
+                }
+            progressMyPosts?.isVisible = false
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         tvName = null
@@ -75,6 +127,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         tvCoins = null
         tvTopCoins = null
         ivAvatar = null
+        rvMyPosts = null
+        tvEmptyMyPosts = null
+        progressMyPosts = null
     }
 }
-
