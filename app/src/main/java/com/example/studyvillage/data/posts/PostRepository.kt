@@ -36,8 +36,13 @@ class PostRepository(
         return post
     }
 
+    suspend fun updatePost(post: PostEntity): PostEntity {
+        val updated = remote.updatePost(post)
+        postDao.insert(updated)
+        return updated
+    }
+
     suspend fun clearLocalPosts() {
         postDao.clearAll()
     }
 }
-

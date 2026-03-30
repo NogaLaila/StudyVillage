@@ -13,7 +13,8 @@ import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
 
 class PostAdapter(
-    posts: List<PostEntity> = emptyList()
+    posts: List<PostEntity> = emptyList(),
+    private val onEditClick: ((PostEntity) -> Unit)? = null
 ) : RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
 
     private val items = posts.toMutableList()
@@ -34,7 +35,7 @@ class PostAdapter(
     }
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
-        holder.bind(items[position])
+        holder.bind(items[position], onEditClick)
     }
 
     override fun getItemCount(): Int = items.size
@@ -43,7 +44,7 @@ class PostAdapter(
         private val binding: ItemPostBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(post: PostEntity) {
+        fun bind(post: PostEntity, onEditClick: ((PostEntity) -> Unit)?) {
             binding.tvPostTitle.text = post.title
             binding.tvPostContent.text = post.content
             val createdByValue = post.createdBy.trim().ifBlank { "unknown" }
@@ -51,6 +52,11 @@ class PostAdapter(
             binding.tvPostCreatedBy.text =
                 itemView.context.getString(R.string.social_post_created_by, handle)
             binding.ivPostImage.contentDescription = post.title
+
+            binding.btnEditPost.isVisible = onEditClick != null
+            binding.btnEditPost.setOnClickListener {
+                onEditClick?.invoke(post)
+            }
 
             val image = post.image.trim()
 

@@ -3,6 +3,7 @@ package com.example.studyvillage.data.posts.remote
 import com.example.studyvillage.data.posts.local.PostEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 class PostRemote(
@@ -71,5 +72,22 @@ class PostRemote(
 
         return post
     }
-}
 
+    suspend fun updatePost(post: PostEntity): PostEntity {
+        firestore.collection("posts")
+            .document(post.id)
+            .set(
+                mapOf(
+                    "title" to post.title.trim(),
+                    "content" to post.content.trim(),
+                    "image" to post.image.trim(),
+                    "createdBy" to post.createdBy.trim(),
+                    "createdAt" to post.createdAt
+                ),
+                SetOptions.merge()
+            )
+            .await()
+
+        return post
+    }
+}

@@ -168,7 +168,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
                 android:layout_marginBottom="8dp"
-                android:text="My Posts"
+                android:text="@string/profile_my_posts"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -184,7 +184,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="You haven't posted anything yet."
+                android:text="@string/profile_empty_my_posts"
                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                 android:visibility="gone" />
 
