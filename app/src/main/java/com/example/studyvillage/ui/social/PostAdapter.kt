@@ -77,7 +77,6 @@ class PostAdapter(
                         })
                 }
                 else -> {
-                    // Treat as Base64 payload (plain base64 string or data URI).
                     val base64Payload = extractBase64Payload(image)
                     val bitmap = decodeBase64ToBitmap(base64Payload)
                     if (bitmap != null) {

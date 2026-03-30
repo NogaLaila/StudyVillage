@@ -42,4 +42,9 @@
     <string name="social_image_uploading_wait">Please wait for image upload to finish.</string>
     <string name="social_post_created_by">Created by: %1$s</string>
     <string name="social_image_preview_content_description">Selected post image preview</string>
+    <string name="profile_title">Profile</string>
+    <string name="profile_avatar_description">Profile avatar</string>
+    <string name="profile_coins_label">Coins</string>
+    <string name="profile_name_placeholder">Adventurer</string>
+    <string name="profile_email_placeholder">—</string>
 </resources>

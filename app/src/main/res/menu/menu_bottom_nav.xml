@@ -21,4 +21,9 @@
         android:icon="@drawable/ic_village"
         android:title="Village" />
 
+    <item
+        android:id="@+id/profileFragment"
+        android:icon="@drawable/profile_panda"
+        android:title="Profile" />
+
 </menu>
