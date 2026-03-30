@@ -90,4 +90,11 @@ class PostRemote(
 
         return post
     }
+
+    suspend fun deletePost(postId: String) {
+        firestore.collection("posts")
+            .document(postId)
+            .delete()
+            .await()
+    }
 }

@@ -64,6 +64,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private lateinit var userRepository: UserRepository
     private val postAdapter = PostAdapter(onEditClick = { displayPost ->
         showEditPostDialog(rawPostsById[displayPost.id] ?: displayPost)
+    }, onDeleteClick = { displayPost ->
+        confirmDeletePost(rawPostsById[displayPost.id] ?: displayPost)
     })
 
     private var activeDialogBinding: DialogCreatePostBinding? = null
@@ -393,6 +395,31 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
         dialog.show()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+    }
+
+    private fun confirmDeletePost(post: PostEntity) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.profile_delete_post_title)
+            .setMessage(R.string.profile_delete_post_message)
+            .setNegativeButton(R.string.social_cancel_action, null)
+            .setPositiveButton(R.string.profile_delete_post_confirm) { _, _ ->
+                deletePost(post.id)
+            }
+            .show()
+    }
+
+    private fun deletePost(postId: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            runCatching { postRepository.deletePost(postId) }
+                .onSuccess {
+                    Toast.makeText(requireContext(), R.string.profile_post_deleted, Toast.LENGTH_SHORT).show()
+                    loadMyPosts()
+                }
+                .onFailure { error ->
+                    Log.e(TAG, "Post delete failed", error)
+                    Toast.makeText(requireContext(), R.string.profile_post_delete_failed, Toast.LENGTH_SHORT).show()
+                }
+        }
     }
 
     private fun uploadPickedImage(uri: Uri) {

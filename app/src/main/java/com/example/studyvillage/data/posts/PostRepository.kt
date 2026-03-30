@@ -42,6 +42,11 @@ class PostRepository(
         return updated
     }
 
+    suspend fun deletePost(postId: String) {
+        remote.deletePost(postId)
+        postDao.deleteById(postId)
+    }
+
     suspend fun clearLocalPosts() {
         postDao.clearAll()
     }

@@ -54,6 +54,18 @@
                     android:src="@android:drawable/ic_menu_edit"
                     app:tint="#6A534B"
                     android:visibility="gone" />
+
+                <ImageButton
+                    android:id="@+id/btnDeletePost"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="@string/profile_delete_post"
+                    android:padding="4dp"
+                    android:src="@android:drawable/ic_menu_delete"
+                    app:tint="#8C3A3A"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <TextView
