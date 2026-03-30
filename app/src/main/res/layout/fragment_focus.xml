@@ -248,6 +248,19 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/tvFocusQuote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:text="@string/focus_quote_loading"
+            android:textColor="#3E2E2A"
+            android:textSize="16sp"
+            android:textStyle="italic"
+            tools:text="\&quot;Do what you can, with what you have, where you are.\&quot;\n- Theodore Roosevelt" />
+
     </LinearLayout>
 
     <LinearLayout

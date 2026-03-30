@@ -19,6 +19,10 @@
     <string name="focus_picker_caption">%1$d minutes</string>
     <string name="focus_picker_apply">Apply</string>
     <string name="focus_picker_cancel">Cancel</string>
+    <string name="focus_quote_loading">Loading quote...</string>
+    <string name="focus_quote_fallback">Stay focused, one session at a time.\n- StudyVillage</string>
+    <string name="focus_quote_format">"%1$s"\n- %2$s</string>
+    <string name="focus_quote_unknown_author">Unknown</string>
     <string name="social_title">Social</string>
     <string name="social_create_post">Create</string>
     <string name="social_empty">No posts yet. Be the first to post.</string>
