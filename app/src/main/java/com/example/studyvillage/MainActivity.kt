@@ -1,9 +1,11 @@
 package com.example.studyvillage
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
@@ -34,6 +36,12 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
 
         binding.bottomNav.setupWithNavController(navController)
+
+        val bitmap = BitmapFactory.decodeResource(resources, R.drawable.profile_panda)
+        val circularIcon = RoundedBitmapDrawableFactory.create(resources, bitmap).also {
+            it.isCircular = true
+        }
+        binding.bottomNav.menu.findItem(R.id.profileFragment)?.icon = circularIcon
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val isAuthScreen =

@@ -10,6 +10,14 @@ class PostRepository(
 
     suspend fun getCachedPosts(): List<PostEntity> = postDao.getAll()
 
+    suspend fun getCachedUserPosts(uid: String): List<PostEntity> = postDao.getByCreatedBy(uid)
+
+    suspend fun refreshUserPosts(uid: String): List<PostEntity> {
+        val remotePosts = remote.fetchPostsByUser(uid)
+        postDao.insertAll(remotePosts)
+        return postDao.getByCreatedBy(uid)
+    }
+
     suspend fun refreshPosts(): List<PostEntity> {
         val remotePosts = remote.fetchPosts()
         postDao.clearAll()
@@ -28,8 +36,13 @@ class PostRepository(
         return post
     }
 
+    suspend fun updatePost(post: PostEntity): PostEntity {
+        val updated = remote.updatePost(post)
+        postDao.insert(updated)
+        return updated
+    }
+
     suspend fun clearLocalPosts() {
         postDao.clearAll()
     }
 }
-

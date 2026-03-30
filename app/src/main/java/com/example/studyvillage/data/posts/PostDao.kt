@@ -12,6 +12,9 @@ interface PostDao {
     @Query("SELECT * FROM posts ORDER BY createdAt DESC")
     suspend fun getAll(): List<PostEntity>
 
+    @Query("SELECT * FROM posts WHERE createdBy = :uid ORDER BY createdAt DESC")
+    suspend fun getByCreatedBy(uid: String): List<PostEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(post: PostEntity)
 

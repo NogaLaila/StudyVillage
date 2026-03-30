@@ -42,7 +42,6 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 		const val TAG = "SocialFragment"
 		const val MAX_IMAGE_DIMENSION = 1080
 		const val MAX_BASE64_CHARS = 700_000
-		val UID_PATTERN = Regex("^[A-Za-z0-9]{20,}$")
 	}
 
 	private var postsView: RecyclerView? = null
@@ -244,27 +243,18 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 
 		val nameCache = mutableMapOf<String, String?>()
 		return posts.map { post ->
-			val rawCreatedBy = post.createdBy.trim()
-			if (rawCreatedBy.isBlank()) return@map post.copy(createdBy = "unknown")
+			val lookupKey = post.createdBy.removePrefix("@").trim()
+			if (lookupKey.isBlank()) return@map post.copy(createdBy = "unknown")
 
-			if (!looksLikeUid(rawCreatedBy)) {
-				val normalized = rawCreatedBy.removePrefix("@").trim().ifBlank { "unknown" }
-				return@map post.copy(createdBy = normalized)
-			}
-
-			if (!nameCache.containsKey(rawCreatedBy)) {
-				nameCache[rawCreatedBy] = runCatching {
-					userRepository.getDisplayNameByUid(rawCreatedBy)
+			if (!nameCache.containsKey(lookupKey)) {
+				nameCache[lookupKey] = runCatching {
+					userRepository.getDisplayNameByUid(lookupKey)
 				}.getOrNull()
 			}
 
-			val resolvedName = nameCache[rawCreatedBy]?.trim().orEmpty()
-			post.copy(createdBy = resolvedName.ifBlank { rawCreatedBy })
+			val resolvedName = nameCache[lookupKey]?.trim().orEmpty()
+			post.copy(createdBy = resolvedName.ifBlank { lookupKey })
 		}
-	}
-
-	private fun looksLikeUid(value: String): Boolean {
-		return UID_PATTERN.matches(value)
 	}
 
 	private fun uploadPickedImage(uri: Uri) {

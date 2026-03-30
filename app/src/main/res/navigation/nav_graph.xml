@@ -75,4 +75,9 @@
         android:id="@+id/myVillageFragment"
         android:name="com.example.studyvillage.ui.village.MyVillageFragment"
         android:label="My Village" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.studyvillage.ui.profile.ProfileFragment"
+        android:label="Profile" />
 </navigation>

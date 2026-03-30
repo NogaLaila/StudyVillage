@@ -37,6 +37,37 @@ class UserRepository(
         return userDao.getUserById(uid)
     }
 
+    suspend fun updateUserProfile(
+        uid: String,
+        name: String,
+        email: String,
+        photoUrl: String?
+    ): UserEntity {
+        val baseUser = userDao.getUserById(uid)
+            ?: remote.getOrCreateUser(
+                uid = uid,
+                email = email,
+                name = name,
+                photoUrl = photoUrl ?: DEFAULT_PROFILE_PHOTO
+            )
+
+        val finalPhotoUrl = when {
+            !photoUrl.isNullOrBlank() -> photoUrl
+            !baseUser.photoUrl.isNullOrBlank() -> baseUser.photoUrl
+            else -> DEFAULT_PROFILE_PHOTO
+        }
+
+        val updatedUser = baseUser.copy(
+            name = name,
+            email = email,
+            photoUrl = finalPhotoUrl
+        )
+
+        remote.updateUserProfile(updatedUser)
+        userDao.insert(updatedUser)
+        return updatedUser
+    }
+
     suspend fun addCoins(uid: String, amount: Long): Long {
         if (amount <= 0L) {
             return userDao.getUserById(uid)?.coins ?: 0L
