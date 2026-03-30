@@ -3,6 +3,7 @@ package com.example.studyvillage.data.user.remote
 import com.example.studyvillage.data.user.UserRepository
 import com.example.studyvillage.data.user.local.UserEntity
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 class UserRemote {
@@ -32,10 +33,18 @@ class UserRemote {
         val existing = getUser(uid)
 
         if (existing != null) {
+            val existingEmail = existing.email?.trim().orEmpty()
+            val existingName = existing.name?.trim().orEmpty()
+            val existingPhotoUrl = existing.photoUrl?.trim().orEmpty()
+
             val updated = existing.copy(
-                email = email ?: existing.email,
-                name = name ?: existing.name,
-                photoUrl = photoUrl ?: existing.photoUrl ?: UserRepository.DEFAULT_PROFILE_PHOTO
+                email = if (existingEmail.isNotBlank()) existing.email else email,
+                name = if (existingName.isNotBlank()) existing.name else name,
+                photoUrl = when {
+                    existingPhotoUrl.isNotBlank() -> existing.photoUrl
+                    !photoUrl.isNullOrBlank() -> photoUrl
+                    else -> UserRepository.DEFAULT_PROFILE_PHOTO
+                }
             )
 
             usersCollection.document(uid).set(
@@ -70,6 +79,20 @@ class UserRemote {
         ).await()
 
         return newUser
+    }
+
+    suspend fun updateUserProfile(user: UserEntity) {
+        usersCollection.document(user.uid)
+            .set(
+                mapOf(
+                    "email" to user.email,
+                    "name" to user.name,
+                    "photoUrl" to user.photoUrl,
+                    "coins" to user.coins
+                ),
+                SetOptions.merge()
+            )
+            .await()
     }
 
     suspend fun updateCoins(uid: String, newCoins: Long) {

@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
+import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
@@ -30,6 +31,7 @@ import com.example.studyvillage.data.shop.local.DataBaseProvider
 import com.example.studyvillage.data.user.UserRepository
 import com.example.studyvillage.data.user.remote.UserRemote
 import com.example.studyvillage.databinding.DialogCreatePostBinding
+import com.example.studyvillage.databinding.DialogEditProfileBinding
 import com.example.studyvillage.ui.social.PostAdapter
 import com.example.studyvillage.util.UserSession
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -52,6 +54,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private var tvCoins: TextView? = null
     private var tvTopCoins: TextView? = null
     private var ivAvatar: ImageView? = null
+    private var btnEditProfile: View? = null
     private var rvMyPosts: RecyclerView? = null
     private var tvEmptyMyPosts: TextView? = null
     private var progressMyPosts: ProgressBar? = null
@@ -67,9 +70,18 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private var isImageUploading = false
     private var pendingPickedImageBase64: String? = null
 
+    private var activeProfileDialogBinding: DialogEditProfileBinding? = null
+    private var isProfileImageUploading = false
+    private var pendingProfileImageBase64: String? = null
+
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) return@registerForActivityResult
         uploadPickedImage(uri)
+    }
+
+    private val pickProfileImageLauncher = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@registerForActivityResult
+        uploadPickedProfileImage(uri)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -80,6 +92,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         tvCoins = view.findViewById(R.id.tvProfileCoins)
         tvTopCoins = view.findViewById(R.id.txtCoins)
         ivAvatar = view.findViewById(R.id.ivProfileAvatar)
+        btnEditProfile = view.findViewById(R.id.btnEditProfile)
         rvMyPosts = view.findViewById(R.id.rvMyPosts)
         tvEmptyMyPosts = view.findViewById(R.id.tvEmptyMyPosts)
         progressMyPosts = view.findViewById(R.id.progressMyPosts)
@@ -90,6 +103,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
         rvMyPosts?.layoutManager = LinearLayoutManager(requireContext())
         rvMyPosts?.adapter = postAdapter
+        btnEditProfile?.setOnClickListener { showEditProfileDialog() }
 
         loadProfile()
         loadMyPosts()
@@ -105,9 +119,14 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             val name = localUser?.name?.takeIf { it.isNotBlank() }
                 ?: displayName
                 ?: getString(R.string.profile_name_placeholder)
+            val shownEmail = localUser?.email?.takeIf { it.isNotBlank() }
+                ?: email
+                ?: getString(R.string.profile_email_placeholder)
+            val shownPhoto = localUser?.photoUrl
 
-            tvEmail?.text = email?.takeIf { it.isNotBlank() } ?: getString(R.string.profile_email_placeholder)
             tvName?.text = name
+            tvEmail?.text = shownEmail
+            renderProfileAvatar(shownPhoto)
             localUser?.coins?.let { coins ->
                 tvCoins?.text = coins.toString()
                 tvTopCoins?.text = coins.toString()
@@ -115,10 +134,129 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
             runCatching { userRepository.syncUser(uid, email, displayName) }
             val refreshed = userRepository.getLocalUser(uid)
-            if (refreshed != null && refreshed.coins != localUser?.coins) {
+            if (refreshed != null) {
+                tvName?.text = refreshed.name?.takeIf { it.isNotBlank() }
+                    ?: displayName
+                    ?: getString(R.string.profile_name_placeholder)
+                tvEmail?.text = refreshed.email?.takeIf { it.isNotBlank() }
+                    ?: email
+                    ?: getString(R.string.profile_email_placeholder)
                 tvCoins?.text = refreshed.coins.toString()
                 tvTopCoins?.text = refreshed.coins.toString()
+                renderProfileAvatar(refreshed.photoUrl)
             }
+        }
+    }
+
+    private fun showEditProfileDialog() {
+        val uid = UserSession.currentUid ?: return
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val currentUser = userRepository.getLocalUser(uid)
+            val dialogBinding = DialogEditProfileBinding.inflate(LayoutInflater.from(requireContext()))
+            val dialog = MaterialAlertDialogBuilder(requireContext())
+                .setView(dialogBinding.root)
+                .create()
+
+            activeProfileDialogBinding = dialogBinding
+            pendingProfileImageBase64 = null
+
+            dialogBinding.etEditName.setText(
+                currentUser?.name?.takeIf { it.isNotBlank() }
+                    ?: UserSession.currentName
+                    ?: ""
+            )
+            dialogBinding.etEditEmail.setText(
+                currentUser?.email?.takeIf { it.isNotBlank() }
+                    ?: UserSession.currentEmail
+                    ?: ""
+            )
+
+            val existingImage = currentUser?.photoUrl?.trim().orEmpty()
+            if (isLikelyUrl(existingImage)) {
+                dialogBinding.etEditImage.setText(existingImage)
+            } else if (existingImage.isNotBlank() && existingImage != UserRepository.DEFAULT_PROFILE_PHOTO) {
+                pendingProfileImageBase64 = existingImage
+                dialogBinding.etEditImage.setText("")
+            }
+
+            dialogBinding.etEditImage.doAfterTextChanged {
+                dialogBinding.inputEditImage.error = null
+                updateEditProfilePreviewFromInput(dialogBinding)
+            }
+            updateEditProfilePreviewFromInput(dialogBinding)
+
+            dialogBinding.btnPickProfileImage.setOnClickListener {
+                pickProfileImageLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            }
+
+            dialogBinding.btnCancelEditProfile.setOnClickListener { dialog.dismiss() }
+
+            dialogBinding.btnSaveEditProfile.setOnClickListener {
+                val name = dialogBinding.etEditName.text?.toString()?.trim().orEmpty()
+                val email = dialogBinding.etEditEmail.text?.toString()?.trim().orEmpty()
+                val typedImage = dialogBinding.etEditImage.text?.toString()?.trim().orEmpty()
+                val image = if (typedImage.isNotBlank()) typedImage else pendingProfileImageBase64
+
+                dialogBinding.inputEditName.error = null
+                dialogBinding.inputEditEmail.error = null
+
+                var hasError = false
+                if (name.isBlank()) {
+                    dialogBinding.inputEditName.error = getString(R.string.social_field_required)
+                    hasError = true
+                }
+                if (email.isBlank()) {
+                    dialogBinding.inputEditEmail.error = getString(R.string.social_field_required)
+                    hasError = true
+                } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    dialogBinding.inputEditEmail.error = getString(R.string.profile_email_invalid)
+                    hasError = true
+                }
+                if (hasError) return@setOnClickListener
+
+                if (isProfileImageUploading) {
+                    Toast.makeText(requireContext(), R.string.profile_image_uploading_wait, Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                dialogBinding.btnSaveEditProfile.isEnabled = false
+                viewLifecycleOwner.lifecycleScope.launch {
+                    runCatching {
+                        userRepository.updateUserProfile(
+                            uid = uid,
+                            name = name,
+                            email = email,
+                            photoUrl = image
+                        )
+                    }
+                        .onSuccess { updated ->
+                            tvName?.text = updated.name?.takeIf { it.isNotBlank() }
+                                ?: getString(R.string.profile_name_placeholder)
+                            tvEmail?.text = updated.email?.takeIf { it.isNotBlank() }
+                                ?: getString(R.string.profile_email_placeholder)
+                            renderProfileAvatar(updated.photoUrl)
+                            Toast.makeText(requireContext(), R.string.profile_edit_updated, Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                        }
+                        .onFailure { error ->
+                            Log.e(TAG, "Profile update failed", error)
+                            Toast.makeText(requireContext(), R.string.profile_edit_failed, Toast.LENGTH_SHORT).show()
+                            dialogBinding.btnSaveEditProfile.isEnabled = true
+                        }
+                }
+            }
+
+            dialog.setOnDismissListener {
+                activeProfileDialogBinding = null
+                pendingProfileImageBase64 = null
+                isProfileImageUploading = false
+            }
+
+            dialog.show()
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         }
     }
 
@@ -285,10 +423,44 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
     }
 
+    private fun uploadPickedProfileImage(uri: Uri) {
+        val dialogBinding = activeProfileDialogBinding ?: return
+        if (isProfileImageUploading) return
+
+        isProfileImageUploading = true
+        dialogBinding.btnPickProfileImage.isEnabled = false
+        dialogBinding.tvProfileImageStatus.isVisible = true
+        dialogBinding.tvProfileImageStatus.text = getString(R.string.profile_image_uploading)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            runCatching { uploadImageToBase64(uri) }
+                .onSuccess { imageBase64 ->
+                    pendingProfileImageBase64 = imageBase64
+                    dialogBinding.etEditImage.setText("")
+                    updateEditProfilePreviewFromInput(dialogBinding)
+                    dialogBinding.tvProfileImageStatus.text = getString(R.string.profile_image_selected_from_phone)
+                }
+                .onFailure { error ->
+                    Log.e(TAG, "Profile image upload failed for uri=$uri", error)
+                    dialogBinding.tvProfileImageStatus.text = getUploadErrorMessage(error)
+                    Toast.makeText(requireContext(), dialogBinding.tvProfileImageStatus.text, Toast.LENGTH_SHORT).show()
+                }
+
+            isProfileImageUploading = false
+            dialogBinding.btnPickProfileImage.isEnabled = true
+        }
+    }
+
     private fun updateDialogPreviewFromInput(dialogBinding: DialogCreatePostBinding) {
         val typedImage = dialogBinding.etImage.text?.toString()?.trim().orEmpty()
         val selectedImage = if (typedImage.isNotBlank()) typedImage else pendingPickedImageBase64.orEmpty()
         renderDialogImagePreview(dialogBinding, selectedImage)
+    }
+
+    private fun updateEditProfilePreviewFromInput(dialogBinding: DialogEditProfileBinding) {
+        val typedImage = dialogBinding.etEditImage.text?.toString()?.trim().orEmpty()
+        val selectedImage = if (typedImage.isNotBlank()) typedImage else pendingProfileImageBase64.orEmpty()
+        renderEditProfileImagePreview(dialogBinding, selectedImage)
     }
 
     private fun renderDialogImagePreview(dialogBinding: DialogCreatePostBinding, imageValue: String) {
@@ -325,6 +497,75 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         } else {
             dialogBinding.ivImagePreview.setImageBitmap(bitmap)
             dialogBinding.ivImagePreview.isVisible = true
+        }
+    }
+
+    private fun renderEditProfileImagePreview(dialogBinding: DialogEditProfileBinding, imageValue: String) {
+        val normalized = imageValue.trim()
+        if (normalized.isBlank() || normalized == UserRepository.DEFAULT_PROFILE_PHOTO) {
+            dialogBinding.ivProfileImagePreview.setImageDrawable(null)
+            dialogBinding.ivProfileImagePreview.isVisible = false
+            return
+        }
+
+        if (isLikelyUrl(normalized)) {
+            dialogBinding.ivProfileImagePreview.isVisible = true
+            Picasso.get()
+                .load(normalized)
+                .fit()
+                .centerCrop()
+                .into(dialogBinding.ivProfileImagePreview, object : Callback {
+                    override fun onSuccess() {
+                        dialogBinding.ivProfileImagePreview.isVisible = true
+                    }
+
+                    override fun onError(e: Exception?) {
+                        dialogBinding.ivProfileImagePreview.setImageDrawable(null)
+                        dialogBinding.ivProfileImagePreview.isVisible = false
+                    }
+                })
+            return
+        }
+
+        val bitmap = decodeBase64ToBitmap(extractBase64Payload(normalized))
+        if (bitmap == null) {
+            dialogBinding.ivProfileImagePreview.setImageDrawable(null)
+            dialogBinding.ivProfileImagePreview.isVisible = false
+        } else {
+            dialogBinding.ivProfileImagePreview.setImageBitmap(bitmap)
+            dialogBinding.ivProfileImagePreview.isVisible = true
+        }
+    }
+
+    private fun renderProfileAvatar(photoValue: String?) {
+        val avatar = ivAvatar ?: return
+        val normalized = photoValue?.trim().orEmpty()
+
+        if (normalized.isBlank() || normalized == UserRepository.DEFAULT_PROFILE_PHOTO) {
+            avatar.setImageResource(R.drawable.profile_panda)
+            return
+        }
+
+        if (isLikelyUrl(normalized)) {
+            Picasso.get()
+                .load(normalized)
+                .fit()
+                .centerCrop()
+                .into(avatar, object : Callback {
+                    override fun onSuccess() = Unit
+
+                    override fun onError(e: Exception?) {
+                        avatar.setImageResource(R.drawable.profile_panda)
+                    }
+                })
+            return
+        }
+
+        val bitmap = decodeBase64ToBitmap(extractBase64Payload(normalized))
+        if (bitmap != null) {
+            avatar.setImageBitmap(bitmap)
+        } else {
+            avatar.setImageResource(R.drawable.profile_panda)
         }
     }
 
@@ -407,11 +648,15 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         tvCoins = null
         tvTopCoins = null
         ivAvatar = null
+        btnEditProfile = null
         rvMyPosts = null
         tvEmptyMyPosts = null
         progressMyPosts = null
         activeDialogBinding = null
         pendingPickedImageBase64 = null
         isImageUploading = false
+        activeProfileDialogBinding = null
+        pendingProfileImageBase64 = null
+        isProfileImageUploading = false
     }
 }

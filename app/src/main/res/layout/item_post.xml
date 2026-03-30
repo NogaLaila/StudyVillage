@@ -19,7 +19,7 @@
             android:layout_height="180dp"
             android:adjustViewBounds="true"
             android:contentDescription="@null"
-            android:scaleType="fitCenter"
+            android:scaleType="centerCrop"
             tools:src="@drawable/ic_social" />
 
         <LinearLayout

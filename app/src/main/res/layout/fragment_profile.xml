@@ -130,6 +130,17 @@
                 android:alpha="0.7"
                 android:text="@string/profile_email_placeholder" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEditProfile"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:text="@string/profile_edit_action"
+                app:icon="@android:drawable/ic_menu_edit"
+                app:iconGravity="textStart" />
+
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
