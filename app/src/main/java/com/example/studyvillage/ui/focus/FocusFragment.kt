@@ -43,6 +43,7 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
 
         binding.txtTitle.text = getString(R.string.focus_title)
         binding.txtCoins.text = "0"
+        binding.tvFocusQuote.text = getString(R.string.focus_quote_loading)
 
         binding.btnStart.setOnClickListener {
             viewModel.onStartClicked()
@@ -68,6 +69,15 @@ class FocusFragment : Fragment(R.layout.fragment_focus) {
             binding.tvIntervalValue.text = state.intervalMinutes.toString()
             binding.btnStart.isEnabled = !state.isRunning
             binding.btnPause.isEnabled = state.isRunning
+            binding.tvFocusQuote.text = if (state.quoteText.isNullOrBlank()) {
+                getString(R.string.focus_quote_fallback)
+            } else {
+                getString(
+                    R.string.focus_quote_format,
+                    state.quoteText,
+                    state.quoteAuthor ?: getString(R.string.focus_quote_unknown_author)
+                )
+            }
 
             state.completedRewardCoins?.let { earned ->
                 showRewardDialog(earned)
